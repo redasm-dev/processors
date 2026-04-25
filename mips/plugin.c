@@ -21,7 +21,7 @@ static void _mips_handle_operands(RDContext* ctx, const RDInstruction* instr) {
 
 static void _mips_render_mnemonic(const RDInstruction* instr, RDRenderer* r) {
     switch(instr->id) {
-        case MIPS_MACRO_NOP: rd_renderer_mnem(r, instr, RD_THEME_NOP); return;
+        case MIPS_MACRO_NOP: rd_renderer_mnem(r, instr, RD_THEME_MUTED); return;
         case MIPS_MACRO_B: rd_renderer_mnem(r, instr, RD_THEME_JUMP); return;
         default: break;
     }

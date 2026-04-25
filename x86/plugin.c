@@ -301,7 +301,7 @@ static void x86_render_instruction(RDRenderer* r, const RDInstruction* instr,
     else if(instr->features & RD_IF_CALL)
         rd_renderer_mnem(r, instr, RD_THEME_CALL);
     else if(instr->features & RD_IF_NOP)
-        rd_renderer_mnem(r, instr, RD_THEME_NOP);
+        rd_renderer_mnem(r, instr, RD_THEME_MUTED);
     else
         rd_renderer_mnem(r, instr, RD_THEME_FOREGROUND);
 
