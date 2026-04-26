@@ -201,7 +201,7 @@ static void x86_decode(RDContext* ctx, RDInstruction* instr,
             case ZYDIS_OPERAND_TYPE_IMMEDIATE: {
                 ZyanU64 addr = 0;
 
-                if(rd_is_jump(instr) &&
+                if(rd_is_branch(instr) &&
                    ZYAN_SUCCESS(ZydisCalcAbsoluteAddress(
                        &zinstr, zop, instr->address, &addr))) {
                     op->kind = RD_OP_ADDR;
