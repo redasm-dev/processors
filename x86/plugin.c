@@ -165,7 +165,7 @@ static void x86_decode(const RDContext* ctx, RDInstruction* instr,
     X86Processor* self = (X86Processor*)proc;
     usize n = rd_read(ctx, instr->address, self->buffer, sizeof(self->buffer));
 
-    ZydisDecodedInstruction zinstr;
+    ZydisDecodedInstruction zinstr = {0};
     ZydisDecodedOperand zops[ZYDIS_MAX_OPERAND_COUNT];
 
     if(!n || !ZYAN_SUCCESS(ZydisDecoderDecodeFull(&self->decoder, self->buffer,
@@ -231,15 +231,14 @@ static void x86_decode(const RDContext* ctx, RDInstruction* instr,
                         zop->mem.index == ZYDIS_REGISTER_NONE) {
                     op->kind = RD_OP_MEM;
 
-                    ZyanU64 addr;
+                    ZyanU64 addr = 0;
 
-                    if(rd_is_branch(instr) &&
-                       ZYAN_SUCCESS(ZydisCalcAbsoluteAddress(
+                    if(ZYAN_SUCCESS(ZydisCalcAbsoluteAddress(
                            &zinstr, zop, instr->address, &addr))) {
                         op->mem = addr;
                     }
-                    else
-                        op->mem = zop->mem.disp.value;
+                    else if(zop->mem.disp.has_displacement)
+                        op->mem = (RDAddress)zop->mem.disp.value;
 
                     op->userdata1 = zop->mem.segment;
                 }
