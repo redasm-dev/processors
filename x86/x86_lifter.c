@@ -101,8 +101,8 @@ static void _x86_lift_jump(RDILInstruction* il, const RDInstruction* instr) {
     rd_il_var(il, instr->address + instr->length);
 }
 
-void x86_lift(RDContext* ctx, const RDInstruction* instr, RDILInstruction* il,
-              RDProcessor* p) {
+void x86_lift(const RDContext* ctx, const RDInstruction* instr,
+              RDILInstruction* il, RDProcessor* p) {
     RD_UNUSED(p);
 
     switch(instr->id) {

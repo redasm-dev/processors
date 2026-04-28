@@ -284,7 +284,7 @@ bool mips_has_delay_slot(usize id) {
     return false;
 }
 
-bool mips_decode_one_be(RDContext* ctx, RDAddress address,
+bool mips_decode_one_be(const RDContext* ctx, RDAddress address,
                         MIPSDecodedInstruction* dec) {
     if(!rd_read_be32(ctx, address, &dec->instr.word)) return false;
 
@@ -292,7 +292,7 @@ bool mips_decode_one_be(RDContext* ctx, RDAddress address,
     return _mips_check_encoding(dec);
 }
 
-bool mips_decode_one_le(RDContext* ctx, RDAddress address,
+bool mips_decode_one_le(const RDContext* ctx, RDAddress address,
                         MIPSDecodedInstruction* dec) {
     if(!rd_read_le32(ctx, address, &dec->instr.word)) return false;
 

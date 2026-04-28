@@ -160,7 +160,7 @@ bool x86_track_segment_reg(RDContext* ctx, const RDInstruction* instr) {
     return false;
 }
 
-static void x86_decode(RDContext* ctx, RDInstruction* instr,
+static void x86_decode(const RDContext* ctx, RDInstruction* instr,
                        RDProcessor* proc) {
     X86Processor* self = (X86Processor*)proc;
     usize n = rd_read(ctx, instr->address, self->buffer, sizeof(self->buffer));

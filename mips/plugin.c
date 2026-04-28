@@ -44,7 +44,8 @@ static void _mips_render_mnemonic(const RDInstruction* instr, RDRenderer* r) {
     }
 }
 
-static void _mips32_process_decoded(RDContext* ctx, MIPSDecodedInstruction* dec,
+static void _mips32_process_decoded(const RDContext* ctx,
+                                    MIPSDecodedInstruction* dec,
                                     RDInstruction* instr) {
     mips_simplify(ctx, dec, instr);
 
@@ -72,7 +73,7 @@ static void _mips32_process_decoded(RDContext* ctx, MIPSDecodedInstruction* dec,
     }
 }
 
-static void _mips32_decode_le(RDContext* ctx, RDInstruction* instr,
+static void _mips32_decode_le(const RDContext* ctx, RDInstruction* instr,
                               RDProcessor* p) {
     RD_UNUSED(p);
     MIPSDecodedInstruction dec = {0};
@@ -81,7 +82,7 @@ static void _mips32_decode_le(RDContext* ctx, RDInstruction* instr,
     _mips32_process_decoded(ctx, &dec, instr);
 }
 
-static void _mips32_decode_be(RDContext* ctx, RDInstruction* instr,
+static void _mips32_decode_be(const RDContext* ctx, RDInstruction* instr,
                               RDProcessor* p) {
     RD_UNUSED(p);
 

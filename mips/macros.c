@@ -33,7 +33,7 @@ static bool _mips_can_simplify_lui(const MIPSDecodedInstruction* lui,
     return false;
 }
 
-static void _mips_patch_lui(RDContext* ctx, MIPSDecodedInstruction* dec,
+static void _mips_patch_lui(const RDContext* ctx, MIPSDecodedInstruction* dec,
                             RDAddress address) {
     const RDProcessorPlugin* p = rd_get_processor_plugin(ctx);
     RDAddress nextaddress = address + dec->length;
@@ -92,7 +92,7 @@ static void _mips_patch_lui(RDContext* ctx, MIPSDecodedInstruction* dec,
     dec->macro.regimm.address = mipsaddress;
 }
 
-void mips_simplify(RDContext* ctx, MIPSDecodedInstruction* dec,
+void mips_simplify(const RDContext* ctx, MIPSDecodedInstruction* dec,
                    const RDInstruction* instr) {
     switch(dec->opcode->id) {
         case MIPS_INSTR_ORI:

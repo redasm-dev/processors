@@ -102,9 +102,9 @@ void mips_decode_j(const MIPSDecodedInstruction* dec, RDInstruction* instr);
 void mips_decode_b(const MIPSDecodedInstruction* dec, RDInstruction* instr);
 
 bool mips_has_delay_slot(usize id);
-bool mips_decode_one_be(RDContext* ctx, RDAddress address,
+bool mips_decode_one_be(const RDContext* ctx, RDAddress address,
                         MIPSDecodedInstruction* dec);
-bool mips_decode_one_le(RDContext* ctx, RDAddress address,
+bool mips_decode_one_le(const RDContext* ctx, RDAddress address,
                         MIPSDecodedInstruction* dec);
 
 RDAddress mips_calc_addr16(RDAddress pc, u16 imm);
