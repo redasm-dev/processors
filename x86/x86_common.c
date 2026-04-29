@@ -1,15 +1,15 @@
 #include "x86_common.h"
 
 X86Address x86_read_address(const RDContext* ctx, RDAddress address) {
-    const unsigned int PTR_SIZE = rd_processor_get_ptr_size(ctx);
+    const RDProcessorPlugin* p = rd_get_processor_plugin(ctx);
     X86Address res = {0};
 
-    if(PTR_SIZE == sizeof(u64)) {
+    if(p->ptr_size == sizeof(u64)) {
         u64 v = 0;
         res.has_value = rd_read_le64(ctx, address, &v);
         res.value = (RDAddress)v;
     }
-    else if(PTR_SIZE == sizeof(u32)) {
+    else if(p->ptr_size == sizeof(u32)) {
         u32 v = 0;
         res.has_value = rd_read_le32(ctx, address, &v);
         res.value = (RDAddress)v;
@@ -19,7 +19,7 @@ X86Address x86_read_address(const RDContext* ctx, RDAddress address) {
 }
 
 ZydisRegister x86_get_ip(const RDContext* ctx) {
-    switch(rd_processor_get_ptr_size(ctx)) {
+    switch(rd_get_processor_plugin(ctx)->ptr_size) {
         case sizeof(u32): return ZYDIS_REGISTER_EIP;
         case sizeof(u64): return ZYDIS_REGISTER_RIP;
         default: break;
@@ -29,7 +29,7 @@ ZydisRegister x86_get_ip(const RDContext* ctx) {
 }
 
 ZydisRegister x86_get_sp(const RDContext* ctx) {
-    switch(rd_processor_get_ptr_size(ctx)) {
+    switch(rd_get_processor_plugin(ctx)->ptr_size) {
         case sizeof(u32): return ZYDIS_REGISTER_ESP;
         case sizeof(u64): return ZYDIS_REGISTER_RSP;
         default: break;
@@ -39,7 +39,7 @@ ZydisRegister x86_get_sp(const RDContext* ctx) {
 }
 
 ZydisRegister x86_get_bp(const RDContext* ctx) {
-    switch(rd_processor_get_ptr_size(ctx)) {
+    switch(rd_get_processor_plugin(ctx)->ptr_size) {
         case sizeof(u32): return ZYDIS_REGISTER_EBP;
         case sizeof(u64): return ZYDIS_REGISTER_RBP;
         default: break;

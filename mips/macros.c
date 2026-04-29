@@ -39,7 +39,7 @@ static void _mips_patch_lui(const RDContext* ctx, MIPSDecodedInstruction* dec,
     MIPSDecodedInstruction next = {0};
     bool ok;
 
-    if(rd_processor_get_flags(ctx) & RD_PF_BE)
+    if(rd_get_processor_plugin(ctx)->flags & RD_PF_BE)
         ok = mips_decode_one_be(ctx, nextaddress, &next);
     else
         ok = mips_decode_one_le(ctx, nextaddress, &next);

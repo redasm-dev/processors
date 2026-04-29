@@ -48,7 +48,7 @@ static void _mips32_process_decoded(const RDContext* ctx,
     }
 }
 
-static void _mips32_decode_le(const RDContext* ctx, RDInstruction* instr,
+static void _mips32_decode_le(RDContext* ctx, RDInstruction* instr,
                               RDProcessor* p) {
     RD_UNUSED(p);
     MIPSDecodedInstruction dec = {0};
@@ -57,7 +57,7 @@ static void _mips32_decode_le(const RDContext* ctx, RDInstruction* instr,
     _mips32_process_decoded(ctx, &dec, instr);
 }
 
-static void _mips32_decode_be(const RDContext* ctx, RDInstruction* instr,
+static void _mips32_decode_be(RDContext* ctx, RDInstruction* instr,
                               RDProcessor* p) {
     RD_UNUSED(p);
 
