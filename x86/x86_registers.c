@@ -109,6 +109,98 @@ void x86_snapshot_regs(RDContext* ctx, const RDInstruction* instr,
     }
 }
 
+void x86_track_math(RDContext* ctx, const RDInstruction* instr) {
+    if(instr->operands[0].kind != RD_OP_REG) return;
+
+    const RDOperand* dst = &instr->operands[0];
+    RDAddress next = x86_get_ip_value(instr);
+
+    RDRegValue lhs, rhs, result;
+    bool lhs_known = rd_get_regval_id(ctx, instr->address, dst->reg, &lhs);
+
+    switch(instr->id) {
+        case ZYDIS_MNEMONIC_INC: {
+            if(lhs_known)
+                rd_auto_regval_id(ctx, next, dst->reg, lhs + 1);
+            else
+                rd_del_auto_regval_id(ctx, next, dst->reg);
+            return;
+        }
+
+        case ZYDIS_MNEMONIC_DEC: {
+            if(lhs_known)
+                rd_auto_regval_id(ctx, next, dst->reg, lhs - 1);
+            else
+                rd_del_auto_regval_id(ctx, next, dst->reg);
+            return;
+        }
+
+        case ZYDIS_MNEMONIC_NOT: {
+            if(lhs_known)
+                rd_auto_regval_id(ctx, next, dst->reg, ~lhs);
+            else
+                rd_del_auto_regval_id(ctx, next, dst->reg);
+            return;
+        }
+
+        case ZYDIS_MNEMONIC_NEG: {
+            if(lhs_known)
+                rd_auto_regval_id(ctx, next, dst->reg, (RDRegValue)(-(i64)lhs));
+            else
+                rd_del_auto_regval_id(ctx, next, dst->reg);
+            return;
+        }
+
+        default: break;
+    }
+
+    // binary operations, need src too
+    if(instr->operands[1].kind == RD_OP_NULL) return;
+
+    const RDOperand* src = &instr->operands[1];
+
+    bool rhs_known = false;
+    if(src->kind == RD_OP_IMM) {
+        rhs = src->imm;
+        rhs_known = true;
+    }
+    else if(src->kind == RD_OP_REG)
+        rhs_known = rd_get_regval_id(ctx, instr->address, src->reg, &rhs);
+
+    if(!lhs_known || !rhs_known) {
+        rd_del_auto_regval_id(ctx, next, dst->reg);
+        return;
+    }
+
+    switch(instr->id) {
+        case ZYDIS_MNEMONIC_ADD: result = lhs + rhs; break;
+        case ZYDIS_MNEMONIC_SUB: result = lhs - rhs; break;
+        case ZYDIS_MNEMONIC_AND: result = lhs & rhs; break;
+        case ZYDIS_MNEMONIC_OR: result = lhs | rhs; break;
+
+        case ZYDIS_MNEMONIC_XOR: {
+            // XOR reg, reg = always zero
+            if(src->kind == RD_OP_REG && src->reg == dst->reg)
+                result = 0;
+            else
+                result = lhs ^ rhs;
+            break;
+        }
+
+        case ZYDIS_MNEMONIC_SHL: result = lhs << (rhs & 0x3F); break;
+        case ZYDIS_MNEMONIC_SHR: result = lhs >> (rhs & 0x3F); break;
+
+        case ZYDIS_MNEMONIC_SAR: {
+            result = (RDRegValue)((i64)lhs >> (rhs & 0x3F));
+            break;
+        }
+
+        default: rd_del_auto_regval_id(ctx, next, dst->reg); return;
+    }
+
+    rd_auto_regval_id(ctx, next, dst->reg, result);
+}
+
 void x86_track_mov(RDContext* ctx, const RDInstruction* instr) {
     if(instr->operands[0].kind != RD_OP_REG) return;
 

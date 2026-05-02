@@ -118,7 +118,7 @@ static void _x86_default_emulate(RDContext* ctx, const RDInstruction* instr) {
                 else
                     _x86_try_set_type(ctx, op, op->mem);
 
-                rd_add_xref(ctx, instr->address, op->mem, RD_DR_ADDRESS);
+                rd_add_xref(ctx, instr->address, op->mem, RD_DR_READ);
                 break;
             }
 
@@ -343,10 +343,31 @@ static void x86_emulate(RDContext* ctx, const RDInstruction* instr,
 
     bool fallback = true;
 
-    if(instr->id == ZYDIS_MNEMONIC_MOV)
-        x86_track_mov(ctx, instr);
-    else if(instr->id == ZYDIS_MNEMONIC_POP)
-        fallback = !x86_track_pop(ctx, instr);
+    switch(instr->id) {
+        case ZYDIS_MNEMONIC_MOV: x86_track_mov(ctx, instr); break;
+
+        case ZYDIS_MNEMONIC_POP: {
+            if(instr->id == ZYDIS_MNEMONIC_POP)
+                fallback = !x86_track_pop(ctx, instr);
+
+            break;
+        }
+
+        case ZYDIS_MNEMONIC_ADD:
+        case ZYDIS_MNEMONIC_SUB:
+        case ZYDIS_MNEMONIC_AND:
+        case ZYDIS_MNEMONIC_OR:
+        case ZYDIS_MNEMONIC_XOR:
+        case ZYDIS_MNEMONIC_SHL:
+        case ZYDIS_MNEMONIC_SHR:
+        case ZYDIS_MNEMONIC_SAR:
+        case ZYDIS_MNEMONIC_INC:
+        case ZYDIS_MNEMONIC_DEC:
+        case ZYDIS_MNEMONIC_NEG:
+        case ZYDIS_MNEMONIC_NOT: x86_track_math(ctx, instr); break;
+
+        default: break;
+    }
 
     if(fallback) _x86_default_emulate(ctx, instr);
     if(rd_can_flow(instr)) rd_flow(ctx, instr->address + instr->length);
