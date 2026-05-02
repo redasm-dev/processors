@@ -178,6 +178,10 @@ static void x86_decode(RDContext* ctx, RDInstruction* instr,
                     op->kind = RD_OP_ADDR;
                     op->addr = zop->imm.value.u;
                 }
+                else if(instr->id == ZYDIS_MNEMONIC_INT) {
+                    op->kind = RD_OP_CNST;
+                    op->cnst = zop->imm.value.u;
+                }
                 else {
                     op->kind = RD_OP_IMM;
                     op->imm = zop->imm.value.u;
@@ -274,7 +278,14 @@ static void x86_render_operand(RDRenderer* r, const RDInstruction* instr,
 
     switch(op->kind) {
         case RD_OP_ADDR: rd_renderer_loc(r, op->addr, 0, 0); break;
-        case RD_OP_IMM: rd_renderer_loc(r, op->imm, 0, RD_NUM_DEFAULT); break;
+
+        case RD_OP_CNST:
+            rd_renderer_num(r, op->imm, 16, 0, RD_NUM_NOADDR);
+            break;
+
+        case RD_OP_IMM:
+            rd_renderer_num(r, op->imm, 16, 0, RD_NUM_DEFAULT);
+            break;
 
         case RD_OP_MEM: {
             rd_renderer_norm(r, "[");

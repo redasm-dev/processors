@@ -118,6 +118,7 @@ void x86_track_mov(RDContext* ctx, const RDInstruction* instr) {
 
     switch(src->kind) {
         case RD_OP_IMM: rd_auto_regval_id(ctx, next, dst->reg, src->imm); break;
+
         case RD_OP_ADDR:
             rd_auto_regval_id(ctx, next, dst->reg, src->addr);
             break;

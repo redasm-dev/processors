@@ -40,6 +40,7 @@ static void _x86_lift_op(RDILInstruction* il, const RDInstruction* instr,
     const RDOperand* op = &instr->operands[idx];
 
     switch(op->kind) {
+        case RD_OP_CNST: rd_il_uint(il, op->cnst); return;
         case RD_OP_REG: rd_il_reg(il, op->reg); return;
         case RD_OP_ADDR: rd_il_var(il, op->addr); return;
         case RD_OP_IMM: rd_il_uint(il, op->imm); return;
