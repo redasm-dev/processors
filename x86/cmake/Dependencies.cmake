@@ -3,7 +3,7 @@ include(cmake/CPM.cmake)
 function(setup_dependencies)
     CPMAddPackage(
         NAME zydis
-        VERSION "4.1.0"
+        VERSION "4.1.1"
         GITHUB_REPOSITORY "zyantific/zydis"
 
         OPTIONS 
