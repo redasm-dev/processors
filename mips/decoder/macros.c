@@ -1,5 +1,5 @@
 #include "macros.h"
-#include "registers.h"
+#include "decoder/registers.h"
 
 // clang-format off
 static const MIPSOpcode M_OPCODE_NOP   = {MIPS_MACRO_NOP,  MIPS_CATEGORY_NONE,      MIPS_FORMAT_MACRO, MIPS_VERSION_NONE};
@@ -97,7 +97,7 @@ void mips_simplify(const RDContext* ctx, MIPSDecodedInstruction* dec,
         case MIPS_INSTR_ORI:
         case MIPS_INSTR_ADDI:
         case MIPS_INSTR_ADDIU: {
-            if(dec->instr.i_u.rs != MIPS_REG_ZERO) {
+            if(dec->instr.i_u.rs == MIPS_REG_ZERO) {
                 dec->macro.regimm.reg = dec->instr.i_u.rt;
                 dec->macro.regimm.u_imm16 = dec->instr.i_u.imm;
                 dec->opcode = &M_OPCODE_LI;
@@ -130,7 +130,7 @@ void mips_simplify(const RDContext* ctx, MIPSDecodedInstruction* dec,
                     dec->instr.i_s.rs == MIPS_REG_ZERO) {
                 if(dec->instr.i_s.rt != MIPS_REG_ZERO)
                     dec->macro.regimm.reg = dec->instr.i_s.rt;
-                else if(MIPS_REG_ZERO != dec->instr.i_s.rs)
+                else if(dec->instr.i_s.rs != MIPS_REG_ZERO)
                     dec->macro.regimm.reg = dec->instr.i_s.rs;
 
                 dec->macro.regimm.s_imm16 = dec->instr.i_s.imm;

@@ -1,6 +1,6 @@
 #pragma once
 
-#include "instructions.h"
+#include "decoder/instructions.h"
 #include <redasm/redasm.h>
 
 typedef enum { MIPS_VERSION_NONE, MIPS_VERSION_I } MIPSVersion;

@@ -1,5 +1,6 @@
-#include "formats.h"
-#include "macros.h"
+#include "decoder/formats.h"
+#include "decoder/macros.h"
+#include "decoder/registers.h"
 #include "registers.h"
 #include <redasm/redasm.h>
 
@@ -81,14 +82,21 @@ static const char* _mips32_get_reg_name(RDReg r, RDProcessor* p) {
 static void _mips32_emulate(RDContext* ctx, const RDInstruction* instr,
                             RDProcessor* p) {
     RD_UNUSED(p);
+
+    RDAddress next = instr->address + instr->length;
+
     switch(instr->id) {
         case MIPS_MACRO_LA: {
             rd_add_xref(ctx, instr->address, instr->operands[1].addr,
                         RD_DR_ADDRESS);
+
+            mips_set_regval(ctx, next, instr->operands[0].reg,
+                            instr->operands[1].addr);
             break;
         }
 
-        case MIPS_MACRO_LW: {
+        case MIPS_MACRO_LW:
+        case MIPS_MACRO_LHU: {
             rd_add_xref(ctx, instr->address, instr->operands[1].addr,
                         RD_DR_READ);
             break;
@@ -101,6 +109,98 @@ static void _mips32_emulate(RDContext* ctx, const RDInstruction* instr,
             break;
         }
 
+        case MIPS_MACRO_LI: {
+            // addiu rt, $zero, imm: zero-extended 16-bit immediate
+            mips_set_regval(ctx, next, instr->operands[0].reg,
+                            (RDRegValue)(u16)instr->operands[1].imm);
+            break;
+        }
+
+        case MIPS_MACRO_MOVE: {
+            RDRegValue val;
+            if(mips_get_regval(ctx, instr->address, instr->operands[1].reg,
+                               &val))
+                mips_set_regval(ctx, next, instr->operands[0].reg, val);
+            else
+                rd_del_auto_regval_id(ctx, next, instr->operands[0].reg);
+
+            break;
+        }
+
+        case MIPS_INSTR_LUI: {
+            RDRegValue val = ((u32)instr->operands[1].imm << 16);
+            mips_set_regval(ctx, next, instr->operands[0].reg, val);
+            break;
+        }
+
+        case MIPS_INSTR_ADDI:
+        case MIPS_INSTR_ADDIU: {
+            RDRegValue val;
+
+            if(mips_get_regval(ctx, instr->address, instr->operands[1].reg,
+                               &val)) {
+                RDRegValue result =
+                    (u32)((i32)val + (i16)instr->operands[2].imm);
+                mips_set_regval(ctx, next, instr->operands[0].reg, result);
+                if(rd_is_address(ctx, result))
+                    rd_add_xref(ctx, instr->address, result, RD_DR_ADDRESS);
+            }
+            else
+                rd_del_auto_regval_id(ctx, next, instr->operands[0].reg);
+
+            break;
+        }
+
+        case MIPS_INSTR_ORI: {
+            RDRegValue val;
+
+            if(mips_get_regval(ctx, instr->address, instr->operands[1].reg,
+                               &val)) {
+                RDRegValue result = ((u32)val | (u16)instr->operands[2].imm);
+                mips_set_regval(ctx, next, instr->operands[0].reg, result);
+                if(rd_is_address(ctx, result))
+                    rd_add_xref(ctx, instr->address, result, RD_DR_ADDRESS);
+            }
+            else
+                rd_del_auto_regval_id(ctx, next, instr->operands[0].reg);
+
+            break;
+        }
+
+        // register relative loads: raw I-format displ, not macro-fused
+        case MIPS_INSTR_LW:
+        case MIPS_INSTR_LH:
+        case MIPS_INSTR_LBU:
+        case MIPS_INSTR_LB:
+        case MIPS_INSTR_LHU: {
+            if(instr->operands[1].kind != RD_OP_DISPL) break;
+
+            RDRegValue base;
+            if(!mips_get_regval(ctx, instr->address,
+                                instr->operands[1].displ.base, &base)) {
+                break;
+            }
+
+            RDAddress ea = ((i32)base + (i16)instr->operands[1].displ.displ);
+            rd_add_xref(ctx, instr->address, ea, RD_DR_READ);
+            break;
+        }
+
+        case MIPS_INSTR_SW:
+        case MIPS_INSTR_SH:
+        case MIPS_INSTR_SB: {
+            if(instr->operands[1].kind != RD_OP_DISPL) break;
+
+            RDRegValue base;
+            if(!mips_get_regval(ctx, instr->address,
+                                instr->operands[1].displ.base, &base)) {
+                break;
+            }
+
+            RDAddress ea = ((i32)base + (i16)instr->operands[1].displ.displ);
+            rd_add_xref(ctx, instr->address, ea, RD_DR_WRITE);
+            break;
+        }
         default: _mips_handle_operands(ctx, instr); break;
     }
 

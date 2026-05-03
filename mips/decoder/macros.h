@@ -1,6 +1,6 @@
 #pragma once
 
-#include "formats.h"
+#include "decoder/formats.h"
 #include <redasm/redasm.h>
 
 void mips_simplify(const RDContext* ctx, MIPSDecodedInstruction* dec,
