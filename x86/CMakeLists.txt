@@ -14,9 +14,9 @@ add_library(${PROJECT_NAME} SHARED)
 target_sources(${PROJECT_NAME}
     PRIVATE 
         plugin.c
-        x86_lifter.c
-        x86_common.c
-        x86_registers.c
+        lifter.c
+        common.c
+        registers.c
 )
 
 target_link_libraries(${PROJECT_NAME} 

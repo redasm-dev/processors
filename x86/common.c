@@ -1,4 +1,4 @@
-#include "x86_common.h"
+#include "common.h"
 
 X86Address x86_read_address(const RDContext* ctx, RDAddress address) {
     const RDProcessorPlugin* p = rd_get_processor_plugin(ctx);

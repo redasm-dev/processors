@@ -1,5 +1,5 @@
-#include "x86_lifter.h"
-#include "x86_common.h"
+#include "lifter.h"
+#include "common.h"
 #include <Zydis/Zydis.h>
 
 static void _x86_lift_displ_addr(RDILInstruction* il, const RDOperand* op) {

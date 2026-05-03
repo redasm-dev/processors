@@ -1,6 +1,6 @@
-#include "x86_common.h"
-#include "x86_lifter.h"
-#include "x86_registers.h"
+#include "common.h"
+#include "lifter.h"
+#include "registers.h"
 #include <Zydis/Zydis.h>
 #include <redasm/redasm.h>
 #include <stdlib.h>

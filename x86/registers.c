@@ -1,4 +1,4 @@
-#include "x86_registers.h"
+#include "registers.h"
 #include <Zydis/Zydis.h>
 #include <string.h>
 
