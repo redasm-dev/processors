@@ -80,6 +80,9 @@ typedef struct MIPSDecodedInstruction {
     union {
         MIPSInstruction instr;
         MIPSMacroInstruction macro;
+        // WARNING: instr and macro share memory.
+        // Always save instr fields to locals before writing to macro fields in
+        // mips_simplify
     };
 } MIPSDecodedInstruction;
 
@@ -107,5 +110,5 @@ bool mips_decode_one_be(const RDContext* ctx, RDAddress address,
 bool mips_decode_one_le(const RDContext* ctx, RDAddress address,
                         MIPSDecodedInstruction* dec);
 
-RDAddress mips_calc_addr16(RDAddress pc, u16 imm);
+RDAddress mips_calc_addr16(RDAddress pc, i16 imm);
 RDAddress mips_calc_addr26(RDAddress pc, u32 imm);

@@ -208,7 +208,7 @@ static void _mips32_emulate(RDContext* ctx, const RDInstruction* instr,
     if(rd_is_delay_slot(instr)) {
         RDDelaySlotInfo dslot = rd_get_delay_slot_info(ctx);
 
-        if(dslot.n == dslot.instr.delay_slots && dslot.instr.flow == RD_IF_STOP)
+        if(dslot.n == dslot.instr.delay_slots && !rd_can_flow(&dslot.instr))
             return;
     }
 

@@ -175,9 +175,8 @@ static bool _mips_check_encoding(MIPSDecodedInstruction* dec) {
     return f != MIPS_FORMAT_NONE;
 }
 
-RDAddress mips_calc_addr16(RDAddress pc, u16 imm) {
-    i32 tgt = (i32)imm; // extend sign
-    return pc + sizeof(MIPSInstruction) + (i32)(tgt * sizeof(MIPSInstruction));
+RDAddress mips_calc_addr16(RDAddress pc, i16 imm) {
+    return pc + sizeof(MIPSInstruction) + ((i32)imm * sizeof(MIPSInstruction));
 }
 
 RDAddress mips_calc_addr26(RDAddress pc, u32 imm) {

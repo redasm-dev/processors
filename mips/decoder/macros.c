@@ -98,8 +98,10 @@ void mips_simplify(const RDContext* ctx, MIPSDecodedInstruction* dec,
         case MIPS_INSTR_ADDI:
         case MIPS_INSTR_ADDIU: {
             if(dec->instr.i_u.rs == MIPS_REG_ZERO) {
-                dec->macro.regimm.reg = dec->instr.i_u.rt;
-                dec->macro.regimm.u_imm16 = dec->instr.i_u.imm;
+                u8 reg = dec->instr.i_u.rt;
+                u16 imm = dec->instr.i_u.imm;
+                dec->macro.regimm.reg = reg;
+                dec->macro.regimm.u_imm16 = imm;
                 dec->opcode = &M_OPCODE_LI;
             }
             break;
@@ -107,8 +109,10 @@ void mips_simplify(const RDContext* ctx, MIPSDecodedInstruction* dec,
 
         case MIPS_INSTR_ADDU: {
             if(dec->instr.r.rt == MIPS_REG_ZERO) {
-                dec->macro.regs.dst = dec->instr.r.rd;
-                dec->macro.regs.src = dec->instr.r.rs;
+                u8 dst = dec->instr.r.rd;
+                u8 src = dec->instr.r.rs;
+                dec->macro.regs.dst = dst;
+                dec->macro.regs.src = src;
                 dec->opcode = &M_OPCODE_MOVE;
             }
             break;
@@ -123,17 +127,19 @@ void mips_simplify(const RDContext* ctx, MIPSDecodedInstruction* dec,
 
         case MIPS_INSTR_BEQ: {
             if(dec->instr.i_s.rt == dec->instr.i_s.rs) {
-                dec->macro.regimm.s_imm16 = dec->instr.i_s.imm;
+                i16 imm = dec->instr.i_s.imm;
+                dec->macro.regimm.s_imm16 = imm;
                 dec->opcode = &M_OPCODE_B;
             }
             else if(dec->instr.i_s.rt == MIPS_REG_ZERO ||
                     dec->instr.i_s.rs == MIPS_REG_ZERO) {
-                if(dec->instr.i_s.rt != MIPS_REG_ZERO)
-                    dec->macro.regimm.reg = dec->instr.i_s.rt;
-                else if(dec->instr.i_s.rs != MIPS_REG_ZERO)
-                    dec->macro.regimm.reg = dec->instr.i_s.rs;
+                u8 reg = (dec->instr.i_s.rt != MIPS_REG_ZERO)
+                             ? dec->instr.i_s.rt
+                             : dec->instr.i_s.rs;
+                i16 imm = dec->instr.i_s.imm;
 
-                dec->macro.regimm.s_imm16 = dec->instr.i_s.imm;
+                dec->macro.regimm.reg = reg;
+                dec->macro.regimm.s_imm16 = imm;
                 dec->opcode = &M_OPCODE_BEQZ;
             }
 
@@ -143,12 +149,13 @@ void mips_simplify(const RDContext* ctx, MIPSDecodedInstruction* dec,
         case MIPS_INSTR_BNE: {
             if(dec->instr.i_s.rt == MIPS_REG_ZERO ||
                dec->instr.i_s.rs == MIPS_REG_ZERO) {
-                if(dec->instr.i_s.rt != MIPS_REG_ZERO)
-                    dec->macro.regimm.reg = dec->instr.i_s.rt;
-                else if(dec->instr.i_s.rs != MIPS_REG_ZERO)
-                    dec->macro.regimm.reg = dec->instr.i_s.rs;
+                u8 reg = (dec->instr.i_s.rt != MIPS_REG_ZERO)
+                             ? dec->instr.i_s.rt
+                             : dec->instr.i_s.rs;
+                i16 imm = dec->instr.i_s.imm;
 
-                dec->macro.regimm.s_imm16 = dec->instr.i_s.imm;
+                dec->macro.regimm.reg = reg;
+                dec->macro.regimm.s_imm16 = imm;
                 dec->opcode = &M_OPCODE_BNEZ;
             }
             break;
