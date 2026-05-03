@@ -3,7 +3,7 @@
 #include "decoder/instructions.h"
 #include <redasm/redasm.h>
 
-typedef enum { MIPS_VERSION_NONE, MIPS_VERSION_I } MIPSVersion;
+typedef enum { MIPS_VERSION_NONE, MIPS_V1 } MIPSVersion;
 
 typedef enum {
     MIPS_FORMAT_NONE = 0,
