@@ -83,7 +83,8 @@ static void _mips32_emulate(RDContext* ctx, const RDInstruction* instr,
                             RDProcessor* p) {
     RD_UNUSED(p);
 
-    RDAddress next = instr->address + instr->length;
+    RDAddress next = rd_is_delay_slot(instr) ? instr->address
+                                             : instr->address + instr->length;
 
     switch(instr->id) {
         case MIPS_MACRO_LA: {
