@@ -13,7 +13,9 @@ add_library(${PROJECT_NAME} SHARED)
 
 target_sources(${PROJECT_NAME}
     PRIVATE 
-        arm/arm64/arm64.c
+        arm/arm32.c
+        arm/arm64.c
+        arm/thumb.c
         capstone.c
         plugin.c
 )
