@@ -5,6 +5,6 @@ if(NOT TARGET redasm::redasm)
     find_package(redasm REQUIRED)
 endif()
 
+add_subdirectory(capstonebundle)
 add_subdirectory(x86)
 add_subdirectory(mips)
-

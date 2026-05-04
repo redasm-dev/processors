@@ -182,7 +182,7 @@ static void _mips32_emulate(RDContext* ctx, const RDInstruction* instr,
                 break;
             }
 
-            RDAddress ea = ((i32)base + (i16)instr->operands[1].displ.displ);
+            RDAddress ea = ((i32)base + (i16)instr->operands[1].displ.offset);
             rd_add_xref(ctx, instr->address, ea, RD_DR_READ);
             break;
         }
@@ -198,7 +198,7 @@ static void _mips32_emulate(RDContext* ctx, const RDInstruction* instr,
                 break;
             }
 
-            RDAddress ea = ((i32)base + (i16)instr->operands[1].displ.displ);
+            RDAddress ea = ((i32)base + (i16)instr->operands[1].displ.offset);
             rd_add_xref(ctx, instr->address, ea, RD_DR_WRITE);
             break;
         }
@@ -216,54 +216,39 @@ static void _mips32_emulate(RDContext* ctx, const RDInstruction* instr,
         rd_flow(ctx, instr->address + instr->length);
 }
 
-static void _mips32_render_mnemonic(RDRenderer* r, const RDInstruction* instr,
+static bool _mips32_render_mnemonic(RDRenderer* r, const RDInstruction* instr,
                                     RDProcessor* p) {
     RD_UNUSED(p);
 
     switch(instr->id) {
-        case MIPS_MACRO_NOP: rd_renderer_mnem(r, instr, RD_THEME_MUTED); return;
-        case MIPS_MACRO_B: rd_renderer_mnem(r, instr, RD_THEME_JUMP); return;
+        case MIPS_MACRO_NOP:
+            rd_renderer_mnem(r, instr, RD_THEME_MUTED);
+            return true;
+
+        case MIPS_MACRO_B:
+            rd_renderer_mnem(r, instr, RD_THEME_JUMP);
+            return true;
+
         default: break;
     }
 
-    switch(instr->flow) {
-        case RD_IF_JUMP: rd_renderer_mnem(r, instr, RD_THEME_JUMP); break;
-
-        case RD_IF_JUMP_COND:
-            rd_renderer_mnem(r, instr, RD_THEME_JUMP_COND);
-            break;
-
-        case RD_IF_CALL: rd_renderer_mnem(r, instr, RD_THEME_CALL); break;
-
-        case RD_IF_CALL_COND:
-            rd_renderer_mnem(r, instr, RD_THEME_CALL_COND);
-            break;
-
-        case RD_IF_STOP: rd_renderer_mnem(r, instr, RD_THEME_STOP); break;
-        default: rd_renderer_mnem(r, instr, RD_THEME_DEFAULT); break;
-    }
+    return false;
 }
 
-static void _mips32_render_operand(RDRenderer* r, const RDInstruction* instr,
+static bool _mips32_render_operand(RDRenderer* r, const RDInstruction* instr,
                                    usize idx, RDProcessor* p) {
     RD_UNUSED(p);
     const RDOperand* op = &instr->operands[idx];
 
-    switch(op->kind) {
-        case RD_OP_REG: rd_renderer_reg(r, op->reg); break;
-        case RD_OP_IMM: rd_renderer_num(r, op->imm, 16, 0, 0); break;
-        case RD_OP_ADDR: rd_renderer_loc(r, op->addr, 0, 0); break;
-        case RD_OP_MEM: rd_renderer_loc(r, op->mem, 0, 0); break;
-
-        case RD_OP_DISPL:
-            rd_renderer_num(r, op->displ.displ, 16, 0, 0);
-            rd_renderer_norm(r, "(");
-            rd_renderer_reg(r, op->displ.base);
-            rd_renderer_norm(r, ")");
-            break;
-
-        default: break;
+    if(op->kind == RD_OP_DISPL) {
+        rd_renderer_num(r, op->displ.offset, 16, 0, 0);
+        rd_renderer_norm(r, "(");
+        rd_renderer_reg(r, op->displ.base);
+        rd_renderer_norm(r, ")");
+        return true;
     }
+
+    return false;
 }
 
 static const RDProcessorPlugin MIPS32_BE = {

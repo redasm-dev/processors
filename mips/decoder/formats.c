@@ -222,7 +222,7 @@ void mips_decode_i(const MIPSDecodedInstruction* dec, RDInstruction* instr) {
 
             instr->operands[1].kind = RD_OP_DISPL;
             instr->operands[1].displ.base = dec->instr.i_u.rs;
-            instr->operands[1].displ.displ = dec->instr.i_u.imm;
+            instr->operands[1].displ.offset = dec->instr.i_u.imm;
             return;
 
         case MIPS_INSTR_LUI:

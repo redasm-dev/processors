@@ -6,7 +6,7 @@ static void _x86_lift_displ_addr(RDILInstruction* il, const RDOperand* op) {
     bool has_base = op->displ.base != ZYDIS_REGISTER_NONE;
     bool has_index = op->displ.index != ZYDIS_REGISTER_NONE;
     bool has_scale = op->displ.scale > 1;
-    bool has_disp = op->displ.displ != 0;
+    bool has_disp = op->displ.offset != 0;
     bool has_indexscale = has_index && has_scale;
     bool has_lhs = has_base || has_index;
 
@@ -32,7 +32,7 @@ static void _x86_lift_displ_addr(RDILInstruction* il, const RDOperand* op) {
         }
     }
 
-    if(has_disp) rd_il_sint(il, op->displ.displ);
+    if(has_disp) rd_il_sint(il, op->displ.offset);
 }
 
 static void _x86_lift_op(RDILInstruction* il, const RDInstruction* instr,

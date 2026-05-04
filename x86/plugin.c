@@ -223,7 +223,7 @@ static void x86_decode(RDContext* ctx, RDInstruction* instr,
                     op->displ.base = zop->mem.base;
                     op->displ.index = zop->mem.index;
                     op->displ.scale = zop->mem.scale;
-                    op->displ.displ = zop->mem.disp.value;
+                    op->displ.offset = zop->mem.disp.value;
                     op->userdata1 = zop->mem.segment;
                 }
                 break;
@@ -248,45 +248,12 @@ static void x86_decode(RDContext* ctx, RDInstruction* instr,
     }
 }
 
-static void x86_render_mnemonic(RDRenderer* r, const RDInstruction* instr,
-                                RDProcessor* proc) {
-    RD_UNUSED(proc);
-
-    switch(instr->flow) {
-        case RD_IF_JUMP: rd_renderer_mnem(r, instr, RD_THEME_JUMP); break;
-
-        case RD_IF_JUMP_COND:
-            rd_renderer_mnem(r, instr, RD_THEME_JUMP_COND);
-            break;
-
-        case RD_IF_CALL: rd_renderer_mnem(r, instr, RD_THEME_CALL); break;
-
-        case RD_IF_CALL_COND:
-            rd_renderer_mnem(r, instr, RD_THEME_CALL_COND);
-            break;
-
-        case RD_IF_NOP: rd_renderer_mnem(r, instr, RD_THEME_MUTED); break;
-        case RD_IF_STOP: rd_renderer_mnem(r, instr, RD_THEME_STOP); break;
-        default: rd_renderer_mnem(r, instr, RD_THEME_FOREGROUND); break;
-    }
-}
-
-static void x86_render_operand(RDRenderer* r, const RDInstruction* instr,
+static bool x86_render_operand(RDRenderer* r, const RDInstruction* instr,
                                usize idx, RDProcessor* proc) {
     RD_UNUSED(proc);
     const RDOperand* op = &instr->operands[idx];
 
     switch(op->kind) {
-        case RD_OP_ADDR: rd_renderer_loc(r, op->addr, 0, 0); break;
-
-        case RD_OP_CNST:
-            rd_renderer_num(r, op->imm, 16, 0, RD_NUM_NOADDR);
-            break;
-
-        case RD_OP_IMM:
-            rd_renderer_num(r, op->imm, 16, 0, RD_NUM_DEFAULT);
-            break;
-
         case RD_OP_MEM: {
             rd_renderer_norm(r, "[");
 
@@ -297,17 +264,6 @@ static void x86_render_operand(RDRenderer* r, const RDInstruction* instr,
             }
 
             rd_renderer_loc(r, op->mem, 0, 0);
-            rd_renderer_norm(r, "]");
-            break;
-        }
-
-        case RD_OP_REG: rd_renderer_reg(r, op->reg); break;
-
-        case RD_OP_PHRASE: {
-            rd_renderer_norm(r, "[");
-            rd_renderer_reg(r, op->phrase.base);
-            rd_renderer_norm(r, "+");
-            rd_renderer_reg(r, op->phrase.index);
             rd_renderer_norm(r, "]");
             break;
         }
@@ -326,15 +282,17 @@ static void x86_render_operand(RDRenderer* r, const RDInstruction* instr,
                 }
             }
 
-            if(op->displ.displ != 0)
-                rd_renderer_loc(r, op->displ.displ, 0, RD_NUM_SIGNED);
+            if(op->displ.offset != 0)
+                rd_renderer_loc(r, op->displ.offset, 0, RD_NUM_SIGNED);
 
             rd_renderer_norm(r, "]");
             break;
         }
 
-        default: break;
+        default: return false;
     }
+
+    return true;
 }
 
 static void x86_emulate(RDContext* ctx, const RDInstruction* instr,
@@ -424,7 +382,6 @@ static void x86_register_processor(RDProcessorPlugin* plugin,
     plugin->decode = x86_decode;
     plugin->emulate = x86_emulate;
     plugin->lift = x86_lift;
-    plugin->render_mnemonic = x86_render_mnemonic;
     plugin->render_operand = x86_render_operand;
     plugin->create = x86_create;
     plugin->destroy = x86_destroy;
