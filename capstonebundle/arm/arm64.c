@@ -16,7 +16,8 @@ static void _arm64_decode(RDContext* ctx, RDInstruction* instr,
     char data[sizeof(u32)];
     if(!rd_read(ctx, instr->address, &data, rd_count_of(data))) return;
 
-    const cs_insn* cs_insn = capstone_decode(instr, data, rd_count_of(data), p);
+    const cs_insn* cs_insn =
+        capstone_plugin_decode(instr, data, rd_count_of(data), p);
     if(!cs_insn) return;
 
     const cs_aarch64* d = &cs_insn->detail->aarch64;
@@ -166,13 +167,13 @@ const RDProcessorPlugin ARM64_LE = {
     .ptr_size = sizeof(u64),
     .int_size = sizeof(u32),
     .userdata = (void*)&ARM64_LE_INIT,
-    .create = capstone_create,
-    .destroy = capstone_destroy,
+    .create = capstone_plugin_create,
+    .destroy = capstone_plugin_destroy,
     .decode = _arm64_decode,
     .emulate = _arm64_emulate,
     .render_operand = _arm64_render_operand,
-    .get_mnemonic = capstone_get_mnemonic,
-    .get_reg_name = capstone_get_reg_name,
+    .get_mnemonic = capstone_plugin_get_mnemonic,
+    .get_reg_name = capstone_plugin_get_reg_name,
 };
 
 const RDProcessorPlugin ARM64_BE = {
@@ -183,11 +184,11 @@ const RDProcessorPlugin ARM64_BE = {
     .ptr_size = sizeof(u64),
     .int_size = sizeof(u32),
     .userdata = (void*)&ARM64_BE_INIT,
-    .create = capstone_create,
-    .destroy = capstone_destroy,
+    .create = capstone_plugin_create,
+    .destroy = capstone_plugin_destroy,
     .decode = _arm64_decode,
     .emulate = _arm64_emulate,
     .render_operand = _arm64_render_operand,
-    .get_mnemonic = capstone_get_mnemonic,
-    .get_reg_name = capstone_get_reg_name,
+    .get_mnemonic = capstone_plugin_get_mnemonic,
+    .get_reg_name = capstone_plugin_get_reg_name,
 };

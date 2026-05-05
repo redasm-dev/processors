@@ -1,13 +1,12 @@
 #include "thumb.h"
 #include "arm/common.h"
-#include "capstone.h"
 
-static const CapstoneInitData THUMB_LE_INIT = {
+const CapstoneInitData THUMB_LE_INIT = {
     .arch = CS_ARCH_ARM,
     .mode = CS_MODE_THUMB | CS_MODE_LITTLE_ENDIAN,
 };
 
-static const CapstoneInitData THUMB_BE_INIT = {
+const CapstoneInitData THUMB_BE_INIT = {
     .arch = CS_ARCH_ARM,
     .mode = CS_MODE_THUMB | CS_MODE_BIG_ENDIAN,
 };
@@ -16,54 +15,19 @@ static RDAddress _thumb_get_pc(const RDInstruction* instr) {
     return (instr->address & ~3) + sizeof(u32);
 }
 
-static void _thumb_decode(RDContext* ctx, RDInstruction* instr,
-                          RDProcessor* p) {
+void capstone_thumb_decode(RDContext* ctx, RDInstruction* instr,
+                           RDProcessor* p) {
     char data[sizeof(u32)];
     if(!rd_read(ctx, instr->address, &data, rd_count_of(data))) return;
 
-    const cs_insn* cs_insn = capstone_decode(instr, data, rd_count_of(data), p);
+    const cs_insn* cs_insn =
+        capstone_plugin_decode(instr, data, rd_count_of(data), p);
     if(!cs_insn) return;
 
     const cs_arm* d = &cs_insn->detail->arm;
+    instr->write_back = cs_insn->detail->writeback;
 
-    switch(instr->id) {
-        case ARM_INS_UDF: instr->flow = RD_IF_STOP; break;
-
-        case ARM_INS_BX: {
-            if(d->operands[0].reg != ARM_REG_LR) {
-                instr->flow = (d->cc == ARMCC_AL || d->cc == ARMCC_Invalid)
-                                  ? RD_IF_JUMP
-                                  : RD_IF_JUMP_COND;
-            }
-            else
-                instr->flow = RD_IF_STOP;
-
-            break;
-        }
-
-        case ARM_INS_POP: {
-            for(uint8_t i = 0; i < d->op_count; i++) {
-                if(d->operands[i].reg == ARM_REG_PC) {
-                    instr->flow = RD_IF_STOP;
-                    break;
-                }
-            }
-
-            break;
-        }
-
-        case ARM_INS_B: {
-            instr->flow = (d->cc == ARMCC_AL || d->cc == ARMCC_Invalid)
-                              ? RD_IF_JUMP
-                              : RD_IF_JUMP_COND;
-            break;
-        }
-
-        case ARM_INS_BL:
-        case ARM_INS_BLX: instr->flow = RD_IF_CALL; break;
-
-        default: break;
-    }
+    if(capstone_arm32_decode_flow(cs_insn, instr)) return;
 
     for(int i = 0; i < d->op_count && i < RD_MAX_OPERANDS; i++) {
         const cs_arm_op* cop = &d->operands[i];
@@ -93,8 +57,12 @@ static void _thumb_decode(RDContext* ctx, RDInstruction* instr,
                    cop->mem.index == ARM_REG_INVALID) {
                     // PC-relative literal pool
                     // ARM PC = current & ~3 + sizeof(u32)
+                    i32 displ = op->displ.offset = cop->subtracted
+                                                       ? -(i32)cop->mem.disp
+                                                       : (i32)cop->mem.disp;
+
                     op->kind = RD_OP_MEM;
-                    op->mem = _thumb_get_pc(instr) + cop->mem.disp;
+                    op->mem = _thumb_get_pc(instr) + displ;
                 }
                 else if(cop->mem.base == ARM_REG_INVALID &&
                         cop->mem.index == ARM_REG_INVALID) {
@@ -105,7 +73,9 @@ static void _thumb_decode(RDContext* ctx, RDInstruction* instr,
                     op->kind = RD_OP_DISPL;
                     op->displ.base = cop->mem.base;
                     op->displ.index = RD_REGID_UNKNOWN;
-                    op->displ.offset = cop->mem.disp;
+                    op->displ.offset = cop->subtracted ? -(i32)cop->mem.disp
+                                                       : (i32)cop->mem.disp;
+                    op->userdata1 = d->post_index;
                 }
                 else {
                     op->kind = RD_OP_PHRASE;
@@ -129,13 +99,13 @@ const RDProcessorPlugin THUMB_LE = {
     .ptr_size = sizeof(u32),
     .int_size = sizeof(u32),
     .userdata = (void*)&THUMB_LE_INIT,
-    .create = capstone_create,
-    .destroy = capstone_destroy,
-    .decode = _thumb_decode,
-    .emulate = capstone_arm32_emulate,
-    .render_operand = capstone_arm32_render_operand,
-    .get_mnemonic = capstone_get_mnemonic,
-    .get_reg_name = capstone_get_reg_name,
+    .create = capstone_plugin_create,
+    .destroy = capstone_plugin_destroy,
+    .decode = capstone_thumb_decode,
+    .emulate = capstone_plugin_arm32_emulate,
+    .render_operand = capstone_plugin_arm32_render_operand,
+    .get_mnemonic = capstone_plugin_get_mnemonic,
+    .get_reg_name = capstone_plugin_get_reg_name,
 };
 
 const RDProcessorPlugin THUMB_BE = {
@@ -146,10 +116,11 @@ const RDProcessorPlugin THUMB_BE = {
     .ptr_size = sizeof(u32),
     .int_size = sizeof(u32),
     .userdata = (void*)&THUMB_BE_INIT,
-    .create = capstone_create,
-    .destroy = capstone_destroy,
-    .emulate = capstone_arm32_emulate,
-    .render_operand = capstone_arm32_render_operand,
-    .get_mnemonic = capstone_get_mnemonic,
-    .get_reg_name = capstone_get_reg_name,
+    .create = capstone_plugin_create,
+    .destroy = capstone_plugin_destroy,
+    .decode = capstone_thumb_decode,
+    .emulate = capstone_plugin_arm32_emulate,
+    .render_operand = capstone_plugin_arm32_render_operand,
+    .get_mnemonic = capstone_plugin_get_mnemonic,
+    .get_reg_name = capstone_plugin_get_reg_name,
 };
