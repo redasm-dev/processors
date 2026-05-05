@@ -1,4 +1,5 @@
 #include "thumb.h"
+#include "arm/common.h"
 #include "capstone.h"
 
 static const CapstoneInitData THUMB_LE_INIT = {
@@ -120,63 +121,6 @@ static void _thumb_decode(RDContext* ctx, RDInstruction* instr,
     }
 }
 
-static void _thumb_emulate(RDContext* ctx, const RDInstruction* instr,
-                           RDProcessor* p) {
-    RD_UNUSED(p);
-
-    rd_foreach_operand(i, op, instr) {
-        if(op->kind == RD_OP_ADDR) {
-            if(rd_is_call(instr))
-                rd_add_xref(ctx, instr->address, op->addr, RD_CR_CALL);
-            else if(rd_is_jump(instr))
-                rd_add_xref(ctx, instr->address, op->addr, RD_CR_JUMP);
-            else
-                rd_add_xref(ctx, instr->address, op->addr, RD_DR_ADDRESS);
-        }
-        else if(op->kind == RD_OP_MEM && rd_is_address(ctx, op->mem))
-            rd_add_xref(ctx, instr->address, op->mem, RD_DR_READ);
-    }
-
-    // catch pc-relative loading
-    const RDOperand* dst = &instr->operands[0];
-    const RDOperand* src = &instr->operands[1];
-
-    if(dst->kind == RD_OP_REG && src->kind == RD_OP_MEM)
-        rd_auto_type(ctx, src->mem, "u32", 0, RD_TYPE_PTR);
-
-    if(rd_can_flow(instr)) rd_flow(ctx, instr->address + instr->length);
-}
-
-static bool _thumb_render_operand(RDRenderer* r, const RDInstruction* instr,
-                                  usize idx, RDProcessor* p) {
-    RD_UNUSED(p);
-    const RDOperand* op = &instr->operands[idx];
-
-    if(op->kind == RD_OP_DISPL) {
-        rd_renderer_norm(r, "[");
-        rd_renderer_reg(r, op->displ.base);
-
-        if(op->displ.offset != 0) {
-            rd_renderer_norm(r, ", #");
-            rd_renderer_num(r, op->displ.offset, 10, 0, RD_NUM_DEFAULT);
-        }
-
-        rd_renderer_norm(r, "]");
-        return true;
-    }
-
-    if(op->kind == RD_OP_PHRASE) {
-        rd_renderer_norm(r, "[");
-        rd_renderer_reg(r, op->phrase.base);
-        rd_renderer_norm(r, ", ");
-        rd_renderer_reg(r, op->phrase.index);
-        rd_renderer_norm(r, "]");
-        return true;
-    }
-
-    return false;
-}
-
 const RDProcessorPlugin THUMB_LE = {
     .level = RD_API_LEVEL,
     .id = "thumb_le",
@@ -188,8 +132,8 @@ const RDProcessorPlugin THUMB_LE = {
     .create = capstone_create,
     .destroy = capstone_destroy,
     .decode = _thumb_decode,
-    .emulate = _thumb_emulate,
-    .render_operand = _thumb_render_operand,
+    .emulate = capstone_arm32_emulate,
+    .render_operand = capstone_arm32_render_operand,
     .get_mnemonic = capstone_get_mnemonic,
     .get_reg_name = capstone_get_reg_name,
 };
@@ -204,8 +148,8 @@ const RDProcessorPlugin THUMB_BE = {
     .userdata = (void*)&THUMB_BE_INIT,
     .create = capstone_create,
     .destroy = capstone_destroy,
-    .decode = _thumb_decode,
-    .emulate = _thumb_emulate,
+    .emulate = capstone_arm32_emulate,
+    .render_operand = capstone_arm32_render_operand,
     .get_mnemonic = capstone_get_mnemonic,
     .get_reg_name = capstone_get_reg_name,
 };

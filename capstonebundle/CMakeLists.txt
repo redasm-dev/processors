@@ -15,6 +15,7 @@ target_sources(${PROJECT_NAME}
     PRIVATE 
         arm/arm32.c
         arm/arm64.c
+        arm/common.c
         arm/thumb.c
         capstone.c
         plugin.c
