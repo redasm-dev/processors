@@ -33,9 +33,19 @@ RDProcessor* capstone_plugin_create(const RDProcessorPlugin* p) {
 
 void capstone_plugin_destroy(RDProcessor* p) { capstone_destroy((Capstone*)p); }
 
-const char* capstone_plugin_get_reg_name(RDReg r, RDProcessor* p) {
+bool capstone_plugin_query_reg(RDQueryReg* q, RDProcessor* p) {
     Capstone* self = (Capstone*)p;
-    return cs_reg_name(self->handle, (unsigned int)r);
+
+    if(q->kind == RD_QUERY_REG_BY_ID) {
+        q->name = cs_reg_name(self->handle, (unsigned int)q->id);
+        if(!q->name) return false;
+    }
+    else // other flags not implemented
+        return false;
+
+    if(q->want & RD_QUERY_REG_WANT_CANONICAL) q->canonical_name = q->name;
+
+    return true;
 }
 
 const cs_insn* capstone_plugin_decode(RDInstruction* instr, const char* code,

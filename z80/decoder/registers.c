@@ -2,7 +2,30 @@
 #include "decoder.h"
 #include <string.h>
 
-static Z80RegId _z80_get_register_id(const char* name) {
+static Z80RegId _z80_reg_canonical(Z80RegId id) {
+    switch(id) {
+        case Z80_REG_B:
+        case Z80_REG_C: return Z80_REG_BC;
+
+        case Z80_REG_D:
+        case Z80_REG_E: return Z80_REG_DE;
+
+        case Z80_REG_H:
+        case Z80_REG_L: return Z80_REG_HL;
+
+        case Z80_REG_IXH:
+        case Z80_REG_IXL: return Z80_REG_IX;
+
+        case Z80_REG_IYH:
+        case Z80_REG_IYL:
+            return Z80_REG_IY;
+
+            // A, HL, BC, DE, SP, IX, IY, I, R, shadows: already canonical
+        default: return id;
+    }
+}
+
+static Z80RegId _z80_get_reg_id(const char* name) {
     if(!name) return Z80_REG_INVALID;
 
     if(!strcmp(name, "a")) return Z80_REG_A;
@@ -57,48 +80,7 @@ static u64 _z80_reg_width_mask(Z80RegId id) {
     }
 }
 
-static Z80RegId _z80_canonical_reg(Z80RegId id) {
-    switch(id) {
-        case Z80_REG_B:
-        case Z80_REG_C: return Z80_REG_BC;
-
-        case Z80_REG_D:
-        case Z80_REG_E: return Z80_REG_DE;
-
-        case Z80_REG_H:
-        case Z80_REG_L: return Z80_REG_HL;
-
-        case Z80_REG_IXH:
-        case Z80_REG_IXL: return Z80_REG_IX;
-
-        case Z80_REG_IYH:
-        case Z80_REG_IYL:
-            return Z80_REG_IY;
-
-            // A, HL, BC, DE, SP, IX, IY, I, R, shadows: already canonical
-        default: return id;
-    }
-}
-
-const char* z80_cc_name(Z80Condition cc) {
-    switch(cc) {
-        case Z80_CC_NZ: return "nz";
-        case Z80_CC_Z: return "z";
-        case Z80_CC_NC: return "nc";
-        case Z80_CC_C: return "c";
-        case Z80_CC_PO: return "po";
-        case Z80_CC_PE: return "pe";
-        case Z80_CC_P: return "p";
-        case Z80_CC_M: return "m";
-        default: break;
-    }
-
-    return "???";
-}
-
-const char* z80_get_reg_name(RDReg reg, RDProcessor* p) {
-    RD_UNUSED(p);
-
+static const char* _z80_get_reg_name(RDReg reg) {
     switch(reg) {
         case Z80_REG_I: return "i";
         case Z80_REG_R: return "r";
@@ -135,10 +117,8 @@ const char* z80_get_reg_name(RDReg reg, RDProcessor* p) {
     return NULL;
 }
 
-bool z80_get_reg_mask(const char* name, RDRegMask* m, RDProcessor* p) {
-    RD_UNUSED(p);
-
-    Z80RegId id = _z80_get_register_id(name);
+static bool _z80_get_reg_mask(const char* name, RDRegMask* m) {
+    Z80RegId id = _z80_get_reg_id(name);
     if(id == Z80_REG_INVALID) return false;
 
     switch(id) {
@@ -160,7 +140,48 @@ bool z80_get_reg_mask(const char* name, RDRegMask* m, RDProcessor* p) {
         default: m->mask = RD_REGMASK_FULL; break;
     }
 
-    m->reg = _z80_canonical_reg(id);
+    return true;
+}
+
+const char* z80_cc_name(Z80Condition cc) {
+    switch(cc) {
+        case Z80_CC_NZ: return "nz";
+        case Z80_CC_Z: return "z";
+        case Z80_CC_NC: return "nc";
+        case Z80_CC_C: return "c";
+        case Z80_CC_PO: return "po";
+        case Z80_CC_PE: return "pe";
+        case Z80_CC_P: return "p";
+        case Z80_CC_M: return "m";
+        default: break;
+    }
+
+    return "???";
+}
+
+bool z80_query_reg(RDQueryReg* q, RDProcessor* p) {
+    RD_UNUSED(p);
+
+    if(q->kind == RD_QUERY_REG_BY_ID) {
+        q->name = _z80_get_reg_name(q->id);
+        if(!q->name) return false;
+    }
+    else if(q->kind == RD_QUERY_REG_BY_NAME) {
+        q->id = _z80_get_reg_id(q->name);
+        if(q->id == Z80_REG_INVALID) return false;
+    }
+    else
+        return false;
+
+    if(q->want & RD_QUERY_REG_WANT_MASK) {
+        if(!_z80_get_reg_mask(q->name, &q->mask)) return false;
+    }
+
+    if(q->want & RD_QUERY_REG_WANT_CANONICAL) {
+        q->canonical_name = _z80_get_reg_name(_z80_reg_canonical(q->id));
+        if(!q->canonical_name) return false;
+    }
+
     return true;
 }
 

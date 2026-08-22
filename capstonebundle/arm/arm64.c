@@ -85,7 +85,7 @@ static void arm64_decode(RDContext* ctx, RDInstruction* instr, RDProcessor* p) {
                     op->kind = RD_OP_DISPL;
                     op->displ.base = cs_op->mem.base;
                     op->displ.index = cs_op->mem.index == AARCH64_REG_INVALID
-                                          ? RD_REGID_UNKNOWN
+                                          ? RD_REGID_INVALID
                                           : cs_op->mem.index;
                     op->displ.offset = cs_op->mem.disp;
                 }
@@ -158,7 +158,7 @@ const RDProcessorPlugin ARM64_LE = {
     .emulate = arm64_emulate,
     .render_operand = arm64_render_operand,
     .get_mnemonic = capstone_plugin_get_mnemonic,
-    .get_reg_name = capstone_plugin_get_reg_name,
+    .query_reg = capstone_plugin_query_reg,
 };
 
 const RDProcessorPlugin ARM64_BE = {
@@ -174,5 +174,5 @@ const RDProcessorPlugin ARM64_BE = {
     .emulate = arm64_emulate,
     .render_operand = arm64_render_operand,
     .get_mnemonic = capstone_plugin_get_mnemonic,
-    .get_reg_name = capstone_plugin_get_reg_name,
+    .query_reg = capstone_plugin_query_reg,
 };

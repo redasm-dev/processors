@@ -85,7 +85,7 @@ void capstone_thumb_decode(RDContext* ctx, RDInstruction* instr,
                     op->kind = RD_OP_DISPL;
                     op->displ.base = cop->mem.base;
                     op->displ.index = cop->mem.index == ARM_REG_INVALID
-                                          ? RD_REGID_UNKNOWN
+                                          ? RD_REGID_INVALID
                                           : cop->mem.index;
                     op->displ.offset = cop->subtracted ? -(i32)cop->mem.disp
                                                        : (i32)cop->mem.disp;
@@ -114,7 +114,7 @@ const RDProcessorPlugin THUMB_LE = {
     .lift = capstone_arm32_lift,
     .render_operand = capstone_plugin_arm32_render_operand,
     .get_mnemonic = capstone_plugin_get_mnemonic,
-    .get_reg_name = capstone_plugin_get_reg_name,
+    .query_reg = capstone_plugin_query_reg,
 };
 
 const RDProcessorPlugin THUMB_BE = {
@@ -131,5 +131,5 @@ const RDProcessorPlugin THUMB_BE = {
     .lift = capstone_arm32_lift,
     .render_operand = capstone_plugin_arm32_render_operand,
     .get_mnemonic = capstone_plugin_get_mnemonic,
-    .get_reg_name = capstone_plugin_get_reg_name,
+    .query_reg = capstone_plugin_query_reg,
 };

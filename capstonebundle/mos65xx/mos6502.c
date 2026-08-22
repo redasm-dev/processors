@@ -112,7 +112,7 @@ static void mos6502_decode(RDContext* ctx, RDInstruction* instr,
 
                     case MOS65XX_AM_ZP_X:
                     case MOS65XX_AM_ABS_X: {
-                        rd_instr_set_op_displ(instr, i, RD_REGID_UNKNOWN,
+                        rd_instr_set_op_displ(instr, i, RD_REGID_INVALID,
                                               MOS65XX_REG_X, 1, (i64)addr);
                         op->size =
                             d->am == MOS65XX_AM_ZP_X ? sizeof(u8) : sizeof(u16);
@@ -121,7 +121,7 @@ static void mos6502_decode(RDContext* ctx, RDInstruction* instr,
 
                     case MOS65XX_AM_ZP_Y:
                     case MOS65XX_AM_ABS_Y: {
-                        rd_instr_set_op_displ(instr, i, RD_REGID_UNKNOWN,
+                        rd_instr_set_op_displ(instr, i, RD_REGID_INVALID,
                                               MOS65XX_REG_Y, 1, (i64)addr);
                         op->size =
                             d->am == MOS65XX_AM_ZP_X ? sizeof(u8) : sizeof(u16);
@@ -262,7 +262,7 @@ static bool mos6502_render_operand(RDRenderer* r, const RDInstruction* instr,
 
         case RD_OP_DISPL: {
             // Only ever reached for abs,X / abs,Y / zp,X / zp,Y
-            // base is always RD_REGID_UNKNOWN (6502 has no base-register
+            // base is always RD_REGID_INVALID (6502 has no base-register
             // addressing mode, only address+index), so the generic
             // "[base+index+disp]" renderer doesn't apply.
             // This is really "$addr,IndexReg".
@@ -292,6 +292,6 @@ const RDProcessorPlugin MOS6502 = {
     .decode = mos6502_decode,
     .emulate = mos6502_emulate,
     .get_mnemonic = capstone_plugin_get_mnemonic,
-    .get_reg_name = capstone_plugin_get_reg_name,
+    .query_reg = capstone_plugin_query_reg,
     .render_operand = mos6502_render_operand,
 };

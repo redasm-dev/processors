@@ -1,4 +1,5 @@
 #include "registers.h"
+#include <string.h>
 
 static const char* const GPR_NAMES[MIPS_REG_MAX] = {
     "$zero", "$at", "$v0", "$v1", "$a0", "$a1", "$a2", "$a3",
@@ -16,7 +17,17 @@ static const char* const COP0R_NAMES[MIPS_REG_COP0_MAX] = {
     "$ErrorEPC", "$31",
 };
 
-const char* mips_get_register(int r) {
+RDReg mips_get_register_id(const char* regname) {
+    if(!regname) return RD_REGID_INVALID;
+
+    for(RDReg i = 0; i < MIPS_REG_MAX; i++) {
+        if(!strcmp(regname, GPR_NAMES[i])) return i;
+    }
+
+    return RD_REGID_INVALID;
+}
+
+const char* mips_get_register_name(RDReg r) {
     return r < MIPS_REG_MAX ? GPR_NAMES[r] : "???";
 }
 

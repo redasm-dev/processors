@@ -16,7 +16,7 @@ typedef struct Capstone {
 
 RDProcessor* capstone_plugin_create(const RDProcessorPlugin* p);
 void capstone_plugin_destroy(RDProcessor* p);
-const char* capstone_plugin_get_reg_name(RDReg r, RDProcessor* p);
+bool capstone_plugin_query_reg(RDQueryReg* q, RDProcessor* p);
 const cs_insn* capstone_plugin_decode(RDInstruction* instr, const char* code,
                                       usize n, RDProcessor* p);
 const char* capstone_plugin_get_mnemonic(const RDInstruction* instr,

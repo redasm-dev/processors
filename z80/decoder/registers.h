@@ -29,7 +29,6 @@ typedef enum {
 } Z80Condition;
 
 const char* z80_cc_name(Z80Condition cc);
-const char* z80_get_reg_name(RDReg reg, RDProcessor* p);
-bool z80_get_reg_mask(const char* name, RDRegMask* m, RDProcessor* p);
+bool z80_query_reg(RDQueryReg* q, RDProcessor* p);
 void z80_track_regs(RDContext* ctx, const RDInstruction* instr);
 void z80_track_derefs(RDContext* ctx, const RDInstruction* instr);

@@ -49,8 +49,8 @@ static void _mips32_process_decoded(MIPSDecodedInstruction* dec,
     }
 }
 
-static void _mips32_decode_le(RDContext* ctx, RDInstruction* instr,
-                              RDProcessor* p) {
+static void mips32_decode_le(RDContext* ctx, RDInstruction* instr,
+                             RDProcessor* p) {
     RD_UNUSED(p);
     MIPSDecodedInstruction dec = {0};
     if(!mips_decode_le(ctx, instr->address, &dec)) return;
@@ -58,8 +58,8 @@ static void _mips32_decode_le(RDContext* ctx, RDInstruction* instr,
     _mips32_process_decoded(&dec, instr);
 }
 
-static void _mips32_decode_be(RDContext* ctx, RDInstruction* instr,
-                              RDProcessor* p) {
+static void mips32_decode_be(RDContext* ctx, RDInstruction* instr,
+                             RDProcessor* p) {
     RD_UNUSED(p);
 
     MIPSDecodedInstruction dec = {0};
@@ -68,19 +68,33 @@ static void _mips32_decode_be(RDContext* ctx, RDInstruction* instr,
     _mips32_process_decoded(&dec, instr);
 }
 
-static const char* _mips32_get_mnemonic(const RDInstruction* instr,
-                                        RDProcessor* p) {
+static const char* mips32_get_mnemonic(const RDInstruction* instr,
+                                       RDProcessor* p) {
     RD_UNUSED(p);
     return mips_get_mnemonic(instr->id);
 }
 
-static const char* _mips32_get_reg_name(RDReg r, RDProcessor* p) {
+static bool mips32_query_reg(RDQueryReg* q, RDProcessor* p) {
     RD_UNUSED(p);
-    return mips_get_register(r);
+
+    if(q->kind == RD_QUERY_REG_BY_ID) {
+        q->name = mips_get_register_name(q->id);
+        if(!q->name) return false;
+    }
+    else if(q->kind == RD_QUERY_REG_BY_NAME) {
+        q->id = mips_get_register_id(q->name);
+        if(q->id == RD_REGID_INVALID) return false;
+    }
+    else
+        return false;
+
+    if(q->want & RD_QUERY_REG_WANT_CANONICAL) q->canonical_name = q->name;
+
+    return true;
 }
 
-static void _mips32_emulate(RDContext* ctx, const RDInstruction* instr,
-                            RDProcessor* p) {
+static void mips32_emulate(RDContext* ctx, const RDInstruction* instr,
+                           RDProcessor* p) {
     RD_UNUSED(p);
 
     RDAddress next = rd_instr_is_delay_slot(instr)
@@ -200,8 +214,8 @@ static void _mips32_emulate(RDContext* ctx, const RDInstruction* instr,
     if(rd_instr_can_flow(instr)) rd_flow(ctx, instr->address + instr->length);
 }
 
-static bool _mips32_render_mnemonic(RDRenderer* r, const RDInstruction* instr,
-                                    RDProcessor* p) {
+static bool mips32_render_mnemonic(RDRenderer* r, const RDInstruction* instr,
+                                   RDProcessor* p) {
     RD_UNUSED(p);
 
     switch(instr->id) {
@@ -219,8 +233,8 @@ static bool _mips32_render_mnemonic(RDRenderer* r, const RDInstruction* instr,
     return false;
 }
 
-static bool _mips32_render_operand(RDRenderer* r, const RDInstruction* instr,
-                                   int idx, RDProcessor* p) {
+static bool mips32_render_operan(RDRenderer* r, const RDInstruction* instr,
+                                 int idx, RDProcessor* p) {
     RD_UNUSED(p);
     const RDOperand* op = &instr->operands[idx];
 
@@ -241,13 +255,13 @@ static const RDProcessorPlugin MIPS32_BE = {
     .name = "MIPS32 (Big Endian)",
     .flags = RD_PF_BE,
     .ptr_size = sizeof(u32),
-    .get_mnemonic = _mips32_get_mnemonic,
-    .get_reg_name = _mips32_get_reg_name,
-    .decode = _mips32_decode_be,
-    .emulate = _mips32_emulate,
+    .get_mnemonic = mips32_get_mnemonic,
+    .query_reg = mips32_query_reg,
+    .decode = mips32_decode_be,
+    .emulate = mips32_emulate,
     .lift = mips32_lift,
-    .render_mnemonic = _mips32_render_mnemonic,
-    .render_operand = _mips32_render_operand,
+    .render_mnemonic = mips32_render_mnemonic,
+    .render_operand = mips32_render_operan,
 };
 
 static const RDProcessorPlugin MIPS32_LE = {
@@ -256,13 +270,13 @@ static const RDProcessorPlugin MIPS32_LE = {
     .name = "MIPS32 (Little Endian)",
     .flags = RD_PF_LE,
     .ptr_size = sizeof(u32),
-    .get_mnemonic = _mips32_get_mnemonic,
-    .get_reg_name = _mips32_get_reg_name,
-    .decode = _mips32_decode_le,
-    .emulate = _mips32_emulate,
+    .get_mnemonic = mips32_get_mnemonic,
+    .query_reg = mips32_query_reg,
+    .decode = mips32_decode_le,
+    .emulate = mips32_emulate,
     .lift = mips32_lift,
-    .render_mnemonic = _mips32_render_mnemonic,
-    .render_operand = _mips32_render_operand,
+    .render_mnemonic = mips32_render_mnemonic,
+    .render_operand = mips32_render_operan,
 };
 
 void rd_plugin_create(void) {

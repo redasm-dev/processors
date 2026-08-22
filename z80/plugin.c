@@ -2,7 +2,7 @@
 #include "decoder/registers.h"
 #include <redasm/redasm.h>
 
-static void _z80_decode(RDContext* ctx, RDInstruction* instr, RDProcessor* p) {
+static void z80_decode(RDContext* ctx, RDInstruction* instr, RDProcessor* p) {
     RD_UNUSED(p);
 
     Z80InstructionResult res;
@@ -17,8 +17,8 @@ static void _z80_decode(RDContext* ctx, RDInstruction* instr, RDProcessor* p) {
     instr->flow = res.instr.flow;
 }
 
-static void _z80_emulate(RDContext* ctx, const RDInstruction* instr,
-                         RDProcessor* p) {
+static void z80_emulate(RDContext* ctx, const RDInstruction* instr,
+                        RDProcessor* p) {
     RD_UNUSED(p);
 
     z80_track_regs(ctx, instr);
@@ -42,8 +42,8 @@ static void _z80_emulate(RDContext* ctx, const RDInstruction* instr,
     if(rd_instr_can_flow(instr)) rd_flow(ctx, instr->address + instr->length);
 }
 
-static bool _z80_render_operand(RDRenderer* r, const RDInstruction* instr,
-                                int idx, RDProcessor* p) {
+static bool z80_render_operand(RDRenderer* r, const RDInstruction* instr,
+                               int idx, RDProcessor* p) {
     RD_UNUSED(p);
 
     const RDOperand* op = &instr->operands[idx];
@@ -119,11 +119,10 @@ static const RDProcessorPlugin Z80 = {
     .name = "Zilog 80",
     .ptr_size = sizeof(u16),
     .get_mnemonic = z80_get_mnemonic,
-    .get_reg_name = z80_get_reg_name,
-    .get_reg_mask = z80_get_reg_mask,
-    .decode = _z80_decode,
-    .emulate = _z80_emulate,
-    .render_operand = _z80_render_operand,
+    .query_reg = z80_query_reg,
+    .decode = z80_decode,
+    .emulate = z80_emulate,
+    .render_operand = z80_render_operand,
 };
 
 void rd_plugin_create(void) { rd_register_processor(&Z80); }

@@ -70,6 +70,7 @@ typedef enum {
     MIPS_REG_COP0_MAX = 32,
 } MIPSCOP0RegisterId;
 
-const char* mips_get_register(int r);
+RDReg mips_get_register_id(const char* regname);
+const char* mips_get_register_name(RDReg r);
 const char* mips_get_cop0_register(int r);
 const char* mips_get_copn_register(int r);

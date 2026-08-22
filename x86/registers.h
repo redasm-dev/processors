@@ -10,4 +10,4 @@ RDAddress x86_get_ip_value(const RDInstruction* instr);
 void x86_track_math(RDContext* ctx, const RDInstruction* instr);
 void x86_track_mov(RDContext* ctx, const RDInstruction* instr);
 bool x86_track_pop(RDContext* ctx, const RDInstruction* instr);
-bool x86_get_reg_mask(const char* name, RDRegMask* m, RDProcessor* p);
+bool x86_query_reg(RDQueryReg* q, RDProcessor* p);

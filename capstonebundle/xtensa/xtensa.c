@@ -15,7 +15,7 @@
         .emulate = xtensa_emulate,                                             \
         .render_operand = xtensa_render_operand,                               \
         .get_mnemonic = capstone_plugin_get_mnemonic,                          \
-        .get_reg_name = capstone_plugin_get_reg_name,                          \
+        .query_reg = capstone_plugin_query_reg,                                \
     }
 
 static const CapstoneInitData XTENSA_ESP8266_INIT = {
@@ -126,7 +126,7 @@ static void xtensa_decode(RDContext* ctx, RDInstruction* instr,
             case XTENSA_OP_MEM:
                 op->kind = RD_OP_DISPL;
                 op->displ.base = cop->mem.base;
-                op->displ.index = RD_REGID_UNKNOWN;
+                op->displ.index = RD_REGID_INVALID;
                 op->displ.offset = cop->mem.disp;
                 break;
 

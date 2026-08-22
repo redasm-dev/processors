@@ -26,11 +26,6 @@
  * - segment registers keeps the index to mapped segments
  */
 
-// const RDCallingConvention* x86_32_calling_conventions[] = {
-//     &x86_cc::cdecl_cc,
-//     nullptr,
-// };
-
 static RDAddress _x86_ptr_to_address(u16 seg_idx, u16 seg_offset,
                                      const RDContext* ctx) {
     const RDProcessorPlugin* plugin = rd_get_processor_plugin(ctx);
@@ -237,7 +232,7 @@ static void x86_decode(RDContext* ctx, RDInstruction* instr,
                     op->kind = RD_OP_DISPL;
                     op->displ.base = zop->mem.base;
                     op->displ.index = zop->mem.index == ZYDIS_REGISTER_NONE
-                                          ? RD_REGID_UNKNOWN
+                                          ? RD_REGID_INVALID
                                           : zop->mem.index;
                     op->displ.scale = zop->mem.scale;
 
@@ -398,13 +393,7 @@ static void x86_register_processor(RDProcessorPlugin* plugin,
     plugin->create = x86_create;
     plugin->destroy = x86_destroy;
     plugin->get_mnemonic = x86_get_mnemonic;
-    plugin->get_reg_name = x86_get_reg_name;
-    plugin->get_reg_mask = x86_get_reg_mask;
-
-    // plugin->get_callingconventions = [](const RDProcessor* self) {
-    //     return reinterpret_cast<const
-    //     X86Processor*>(self)->calling_conventions;
-    // };
+    plugin->query_reg = x86_query_reg;
 
     rd_register_processor(plugin);
 }

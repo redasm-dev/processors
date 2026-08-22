@@ -9,7 +9,7 @@ static RDReg _x86_get_register_id(const char* name) {
         if(rname && !strcmp(rname, name)) return (RDReg)r;
     }
 
-    return RD_REGID_UNKNOWN;
+    return RD_REGID_INVALID;
 }
 
 static RDReg _x86_canonical_reg(RDReg r) {
@@ -50,6 +50,48 @@ static RDReg _x86_canonical_reg(RDReg r) {
     }
 
     return r;
+}
+
+// register I/O is relative to 64 bit registers
+static bool _x86_get_reg_mask(RDReg reg_id, RDRegMask* m) {
+    if(reg_id == RD_REGID_INVALID) return false;
+
+    switch(reg_id) {
+        case ZYDIS_REGISTER_AL:
+        case ZYDIS_REGISTER_BL:
+        case ZYDIS_REGISTER_CL:
+        case ZYDIS_REGISTER_DL: m->mask = 0xFF; break;
+
+        case ZYDIS_REGISTER_AH:
+        case ZYDIS_REGISTER_BH:
+        case ZYDIS_REGISTER_CH:
+        case ZYDIS_REGISTER_DH:
+            m->mask = 0xFF00;
+            m->shift = 8;
+            break;
+
+        case ZYDIS_REGISTER_AX:
+        case ZYDIS_REGISTER_BX:
+        case ZYDIS_REGISTER_CX:
+        case ZYDIS_REGISTER_DX:
+        case ZYDIS_REGISTER_SI:
+        case ZYDIS_REGISTER_DI:
+        case ZYDIS_REGISTER_BP:
+        case ZYDIS_REGISTER_SP: m->mask = 0xFFFF; break;
+
+        case ZYDIS_REGISTER_EAX:
+        case ZYDIS_REGISTER_EBX:
+        case ZYDIS_REGISTER_ECX:
+        case ZYDIS_REGISTER_EDX:
+        case ZYDIS_REGISTER_ESI:
+        case ZYDIS_REGISTER_EDI:
+        case ZYDIS_REGISTER_EBP:
+        case ZYDIS_REGISTER_ESP: m->mask = 0xFFFFFFFF; break;
+
+        default: m->mask = RD_REGMASK_FULL; break;
+    }
+
+    return true;
 }
 
 bool x86_is_segment_reg(RDReg r) {
@@ -216,7 +258,7 @@ void x86_track_mov(RDContext* ctx, const RDInstruction* instr) {
 }
 
 bool x86_track_pop(RDContext* ctx, const RDInstruction* instr) {
-    // TODO: davide - stack tracking needed to resolve POP sreg values
+    // TODO: stack tracking needed to resolve POP sreg values
     // statically. For now, always invalidate, correct but conservative.
     const RDOperand* dst = &instr->operands[0];
     if(dst->kind != RD_OP_REG) return false;
@@ -226,48 +268,27 @@ bool x86_track_pop(RDContext* ctx, const RDInstruction* instr) {
     return true;
 }
 
-bool x86_get_reg_mask(const char* name, RDRegMask* m, RDProcessor* p) {
-    // register I/O is relative to 64 bit registers
+bool x86_query_reg(RDQueryReg* q, RDProcessor* p) {
     RD_UNUSED(p);
 
-    RDReg reg_id = _x86_get_register_id(name);
-    if(reg_id == RD_REGID_UNKNOWN) return false;
+    if(q->kind == RD_QUERY_REG_BY_ID) {
+        q->name = ZydisRegisterGetString((ZydisRegister)q->id);
+        if(!q->name) return false;
+    }
+    else if(q->kind == RD_QUERY_REG_BY_NAME) {
+        q->id = _x86_get_register_id(q->name);
+        if(q->id == RD_REGID_INVALID) return false;
+    }
+    else
+        return false;
 
-    m->reg = _x86_canonical_reg(reg_id);
+    if(q->want & RD_QUERY_REG_WANT_MASK) {
+        if(!_x86_get_reg_mask(q->id, &q->mask)) return false;
+    }
 
-    switch(reg_id) {
-        case ZYDIS_REGISTER_AL:
-        case ZYDIS_REGISTER_BL:
-        case ZYDIS_REGISTER_CL:
-        case ZYDIS_REGISTER_DL: m->mask = 0xFF; break;
-
-        case ZYDIS_REGISTER_AH:
-        case ZYDIS_REGISTER_BH:
-        case ZYDIS_REGISTER_CH:
-        case ZYDIS_REGISTER_DH:
-            m->mask = 0xFF00;
-            m->shift = 8;
-            break;
-
-        case ZYDIS_REGISTER_AX:
-        case ZYDIS_REGISTER_BX:
-        case ZYDIS_REGISTER_CX:
-        case ZYDIS_REGISTER_DX:
-        case ZYDIS_REGISTER_SI:
-        case ZYDIS_REGISTER_DI:
-        case ZYDIS_REGISTER_BP:
-        case ZYDIS_REGISTER_SP: m->mask = 0xFFFF; break;
-
-        case ZYDIS_REGISTER_EAX:
-        case ZYDIS_REGISTER_EBX:
-        case ZYDIS_REGISTER_ECX:
-        case ZYDIS_REGISTER_EDX:
-        case ZYDIS_REGISTER_ESI:
-        case ZYDIS_REGISTER_EDI:
-        case ZYDIS_REGISTER_EBP:
-        case ZYDIS_REGISTER_ESP: m->mask = 0xFFFFFFFF; break;
-
-        default: m->mask = RD_REGMASK_FULL; break;
+    if(q->want & RD_QUERY_REG_WANT_CANONICAL) {
+        q->canonical_name = ZydisRegisterGetString(_x86_canonical_reg(q->id));
+        if(!q->canonical_name) return false;
     }
 
     return true;
