@@ -361,15 +361,26 @@ static void x86_destroy(RDProcessor* p) {
     rd_free(self);
 }
 
+static void x86_setup(RDContext* ctx, RDProcessor* p) {
+    X86Processor* self = (X86Processor*)p;
+
+    switch(self->userdata->mode) {
+        case ZYDIS_MACHINE_MODE_LEGACY_32:
+            rd_kb_load(ctx, "arch/x86_32/callconv");
+            break;
+
+        case ZYDIS_MACHINE_MODE_LONG_64:
+            rd_kb_load(ctx, "arch/x86_64/callconv");
+            break;
+
+        default: break;
+    }
+}
+
 static const char* x86_get_mnemonic(const RDInstruction* instr,
                                     RDProcessor* p) {
     RD_UNUSED(p);
     return ZydisMnemonicGetString((ZydisMnemonic)instr->id);
-}
-
-static const char* x86_get_reg_name(RDReg reg, RDProcessor* p) {
-    RD_UNUSED(p);
-    return ZydisRegisterGetString((ZydisRegister)reg);
 }
 
 static void x86_register_processor(RDProcessorPlugin* plugin,
@@ -392,6 +403,7 @@ static void x86_register_processor(RDProcessorPlugin* plugin,
     plugin->render_operand = x86_render_operand;
     plugin->create = x86_create;
     plugin->destroy = x86_destroy;
+    plugin->setup = x86_setup;
     plugin->get_mnemonic = x86_get_mnemonic;
     plugin->query_reg = x86_query_reg;
 
