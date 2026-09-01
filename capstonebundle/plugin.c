@@ -15,7 +15,7 @@
             RD_LOG_WARN("missing " #arch " support, skipping registration");   \
     } while(0)
 
-static void capstone_plugin_load(void) {
+static void capstone_module_load(void) {
     capstonebundle_register(CS_ARCH_ARM, {
         rd_register_processor(&THUMB_LE);
         rd_register_processor(&THUMB_BE);
@@ -46,5 +46,5 @@ static void capstone_plugin_load(void) {
 
 RD_MODULE_EXPORT = {
     .api_version = RD_API_VERSION,
-    .load = capstone_plugin_load,
+    .load = capstone_module_load,
 };

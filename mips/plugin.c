@@ -277,7 +277,7 @@ static const RDProcessorPlugin MIPS32_LE = {
     .render_operand = mips32_render_operan,
 };
 
-static void mips_plugin_load(void) {
+static void mips_module_load(void) {
     mips_initialize_formats();
     rd_register_processor(&MIPS32_BE);
     rd_register_processor(&MIPS32_LE);
@@ -285,5 +285,5 @@ static void mips_plugin_load(void) {
 
 RD_MODULE_EXPORT = {
     .api_version = RD_API_VERSION,
-    .load = mips_plugin_load,
+    .load = mips_module_load,
 };
