@@ -2,7 +2,7 @@
 #include "arm/arm32/thumb.h"
 #include "arm/arm64.h"
 #include "mos65xx/mos6502.h"
-#include "xtensa/xtensa.h"
+// #include "xtensa/xtensa.h"
 #include <capstone/capstone.h>
 #include <redasm/redasm.h>
 
@@ -42,10 +42,4 @@ void rd_plugin_create(void) {
     //     rd_register_processor(&XTENSA_ESP32);
     //     rd_register_processor(&XTENSA_ESP32S2);
     // });
-}
-
-const char* rd_plugin_version(void) {
-    int major, minor;
-    cs_version(&major, &minor);
-    return rd_format("1.0-capstone-%d.%d", major, minor);
 }

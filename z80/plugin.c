@@ -126,5 +126,3 @@ static const RDProcessorPlugin Z80 = {
 };
 
 void rd_plugin_create(void) { rd_register_processor(&Z80); }
-
-const char* rd_plugin_version(void) { return "1.0"; }

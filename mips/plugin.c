@@ -284,5 +284,3 @@ void rd_plugin_create(void) {
     rd_register_processor(&MIPS32_BE);
     rd_register_processor(&MIPS32_LE);
 }
-
-const char* rd_plugin_version(void) { return "1.0"; }
