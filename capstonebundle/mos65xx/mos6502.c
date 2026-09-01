@@ -153,7 +153,8 @@ static void mos6502_decode(RDContext* ctx, RDInstruction* instr,
 
                     default:
                         op->kind = RD_OP_STUB;
-                        RD_LOG_WARN("stub memory operand %d @ %x, (value %d)",
+                        RD_LOG_WARN("stub memory operand %d @ %" PRIX64
+                                    ", (value %d)",
                                     i, instr->address, d->am);
                         break;
                 }
@@ -282,7 +283,6 @@ static bool mos6502_render_operand(RDRenderer* r, const RDInstruction* instr,
 }
 
 const RDProcessorPlugin MOS6502 = {
-    .level = RD_API_LEVEL,
     .id = "mos6502",
     .name = "MOS 6502",
     .ptr_size = sizeof(u16),

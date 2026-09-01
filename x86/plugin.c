@@ -390,7 +390,6 @@ static void x86_register_processor(RDProcessorPlugin* plugin,
     ud->mode = mode;
     ud->width = width;
 
-    plugin->level = RD_API_LEVEL;
     plugin->id = id;
     plugin->name = name;
     plugin->ptr_size = addrsize;
@@ -414,7 +413,7 @@ static RDProcessorPlugin x86_16 = {0};
 static RDProcessorPlugin x86_32 = {0};
 static RDProcessorPlugin x86_64 = {0};
 
-void rd_plugin_create(void) {
+static void x86_plugin_load(void) {
     x86_register_processor(&x86_16_real, ZYDIS_MACHINE_MODE_REAL_16,
                            ZYDIS_STACK_WIDTH_16, "x86_16_real", "X86_16 (Real)",
                            sizeof(u16));
@@ -432,9 +431,15 @@ void rd_plugin_create(void) {
                            sizeof(u64));
 }
 
-void rd_plugin_destroy(void) {
+static void x86_plugin_unload(void) {
     rd_free(x86_16_real.userdata);
     rd_free(x86_16.userdata);
     rd_free(x86_32.userdata);
     rd_free(x86_64.userdata);
 }
+
+RD_MODULE_EXPORT = {
+    .api_version = RD_API_VERSION,
+    .load = x86_plugin_load,
+    .unload = x86_plugin_unload,
+};

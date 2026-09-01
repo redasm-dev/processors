@@ -101,7 +101,6 @@ void capstone_thumb_decode(RDContext* ctx, RDInstruction* instr,
 }
 
 const RDProcessorPlugin THUMB_LE = {
-    .level = RD_API_LEVEL,
     .id = "thumb_le",
     .name = "THUMB (Little Endian)",
     .flags = RD_PF_LE,
@@ -118,7 +117,6 @@ const RDProcessorPlugin THUMB_LE = {
 };
 
 const RDProcessorPlugin THUMB_BE = {
-    .level = RD_API_LEVEL,
     .id = "thumb_be",
     .name = "THUMB (Big Endian)",
     .flags = RD_PF_BE,

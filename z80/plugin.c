@@ -114,7 +114,6 @@ static bool z80_render_operand(RDRenderer* r, const RDInstruction* instr,
 }
 
 static const RDProcessorPlugin Z80 = {
-    .level = RD_API_LEVEL,
     .id = "z80",
     .name = "Zilog 80",
     .ptr_size = sizeof(u16),
@@ -125,4 +124,9 @@ static const RDProcessorPlugin Z80 = {
     .render_operand = z80_render_operand,
 };
 
-void rd_plugin_create(void) { rd_register_processor(&Z80); }
+static void z80_plugin_load(void) { rd_register_processor(&Z80); }
+
+RD_MODULE_EXPORT = {
+    .api_version = RD_API_VERSION,
+    .load = z80_plugin_load,
+};

@@ -250,7 +250,6 @@ static bool mips32_render_operan(RDRenderer* r, const RDInstruction* instr,
 }
 
 static const RDProcessorPlugin MIPS32_BE = {
-    .level = RD_API_LEVEL,
     .id = "mips32_be",
     .name = "MIPS32 (Big Endian)",
     .flags = RD_PF_BE,
@@ -265,7 +264,6 @@ static const RDProcessorPlugin MIPS32_BE = {
 };
 
 static const RDProcessorPlugin MIPS32_LE = {
-    .level = RD_API_LEVEL,
     .id = "mips32_le",
     .name = "MIPS32 (Little Endian)",
     .flags = RD_PF_LE,
@@ -279,8 +277,13 @@ static const RDProcessorPlugin MIPS32_LE = {
     .render_operand = mips32_render_operan,
 };
 
-void rd_plugin_create(void) {
+static void mips_plugin_load(void) {
     mips_initialize_formats();
     rd_register_processor(&MIPS32_BE);
     rd_register_processor(&MIPS32_LE);
 }
+
+RD_MODULE_EXPORT = {
+    .api_version = RD_API_VERSION,
+    .load = mips_plugin_load,
+};

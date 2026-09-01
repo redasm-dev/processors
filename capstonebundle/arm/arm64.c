@@ -146,7 +146,6 @@ static bool arm64_render_operand(RDRenderer* r, const RDInstruction* instr,
 }
 
 const RDProcessorPlugin ARM64_LE = {
-    .level = RD_API_LEVEL,
     .id = "arm64_le",
     .name = "ARM64 (Little Endian)",
     .flags = RD_PF_LE,
@@ -162,7 +161,6 @@ const RDProcessorPlugin ARM64_LE = {
 };
 
 const RDProcessorPlugin ARM64_BE = {
-    .level = RD_API_LEVEL,
     .id = "arm64_be",
     .name = "ARM64 (Big Endian)",
     .flags = RD_PF_BE,

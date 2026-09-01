@@ -154,7 +154,6 @@ static void arm32_emulate(RDContext* ctx, const RDInstruction* instr,
 }
 
 const RDProcessorPlugin ARM32_LE = {
-    .level = RD_API_LEVEL,
     .id = "arm32_le",
     .name = "ARM32 (Little Endian)",
     .flags = RD_PF_LE,
@@ -171,7 +170,6 @@ const RDProcessorPlugin ARM32_LE = {
 };
 
 const RDProcessorPlugin ARM32_BE = {
-    .level = RD_API_LEVEL,
     .id = "arm32_be",
     .name = "ARM32 (Big Endian)",
     .flags = RD_PF_BE,

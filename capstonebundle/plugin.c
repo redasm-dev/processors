@@ -15,7 +15,7 @@
             RD_LOG_WARN("missing " #arch " support, skipping registration");   \
     } while(0)
 
-void rd_plugin_create(void) {
+static void capstone_plugin_load(void) {
     capstonebundle_register(CS_ARCH_ARM, {
         rd_register_processor(&THUMB_LE);
         rd_register_processor(&THUMB_BE);
@@ -43,3 +43,8 @@ void rd_plugin_create(void) {
     //     rd_register_processor(&XTENSA_ESP32S2);
     // });
 }
+
+RD_MODULE_EXPORT = {
+    .api_version = RD_API_VERSION,
+    .load = capstone_plugin_load,
+};

@@ -3,7 +3,6 @@
 
 #define XTENSA_PLUGIN(_id, _name, _init)                                       \
     {                                                                          \
-        .level = RD_API_LEVEL,                                                 \
         .id = (_id),                                                           \
         .name = (_name),                                                       \
         .flags = RD_PF_LE,                                                     \
