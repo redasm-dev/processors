@@ -117,22 +117,13 @@ static void _x86_default_emulate(RDContext* ctx, const RDInstruction* instr) {
             }
 
             case RD_OP_MEM: {
-                if(rd_instr_is_jump(instr)) {
-                    X86Address addr = x86_read_address(ctx, op->mem);
-                    if(addr.has_value) {
-                        rd_add_xref(ctx, instr->address, addr.value,
-                                    RD_CR_JUMP);
-                    }
-                }
-                else if(rd_instr_is_call(instr)) {
-                    X86Address addr = x86_read_address(ctx, op->mem);
-                    if(addr.has_value) {
-                        rd_add_xref(ctx, instr->address, addr.value,
-                                    RD_CR_CALL);
-                    }
-                }
-                else
-                    _x86_try_set_type(ctx, op, op->mem);
+                // Memory-indirect branches are NOT resolved statically: the
+                // stored pointer may be a loader-patched slot (ELF lazy-binding
+                // stub, PE IAT), an initial value the program overwrites, or
+                // uninitialized.
+                // RDIL names thunks from the slot address itself, so nothing is
+                // lost.
+                _x86_try_set_type(ctx, op, op->mem);
 
                 rd_add_xref(ctx, instr->address, op->mem, RD_DR_READ);
                 break;
