@@ -233,7 +233,27 @@ bool capstone_plugin_arm32_render_operand(RDRenderer* r,
                                           const RDInstruction* instr, int idx,
                                           RDProcessor* p) {
     RD_UNUSED(p);
+
+    RDContext* ctx = rd_renderer_get_context(r);
+    const RDProcessorPlugin* plugin = rd_get_processor_plugin(ctx);
+    bool is_be = plugin->flags & RD_PF_BE;
+
     const RDOperand* op = &instr->operands[idx];
+
+    if(op->kind == RD_OP_MEM && instr->id == ARM_INS_LDR && idx == 1) {
+        RDContext* ctx = rd_renderer_get_context(r);
+        u32 v;
+
+        bool ok = !rd_is_writable(ctx, op->mem) &&
+                  (is_be ? rd_read_be32(ctx, op->mem, &v)
+                         : rd_read_le32(ctx, op->mem, &v));
+
+        if(!ok) return false;
+
+        rd_renderer_norm(r, "=");
+        rd_renderer_loc(r, (RDAddress)v & ~1U, 8, RD_NUM_DEFAULT);
+        return true;
+    }
 
     if(op->kind == RD_OP_DISPL) {
         rd_renderer_norm(r, "[");
