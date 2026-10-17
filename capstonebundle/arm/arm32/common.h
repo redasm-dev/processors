@@ -21,3 +21,4 @@ bool capstone_arm32_decode_regmask(const cs_insn* cs_insn, RDInstruction* instr,
                                    usize idx);
 
 bool capstone_arm32_decode_flow(const cs_insn* cs_insn, RDInstruction* instr);
+void capstone_arm32_decode_psr(const cs_arm_op* cop, RDOperand* op);

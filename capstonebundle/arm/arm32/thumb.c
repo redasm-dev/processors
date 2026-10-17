@@ -49,6 +49,7 @@ void capstone_thumb_decode(RDContext* ctx, RDInstruction* instr,
             case ARM_OP_REG:
                 op->kind = RD_OP_REG;
                 op->reg = cop->reg;
+                op->userdata2 = (cop->access & CS_AC_WRITE) != 0;
                 break;
 
             case ARM_OP_IMM: {
@@ -94,6 +95,9 @@ void capstone_thumb_decode(RDContext* ctx, RDInstruction* instr,
 
                 break;
             }
+
+            case ARM_OP_CPSR:
+            case ARM_OP_SPSR: capstone_arm32_decode_psr(cop, op); break;
 
             default: break;
         }

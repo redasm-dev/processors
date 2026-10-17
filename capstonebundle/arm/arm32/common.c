@@ -1,6 +1,9 @@
 #include "common.h"
 
-#define ARM_OP_REGMASK (RD_OP_USERBASE + 0)
+typedef enum {
+    ARM_OP_REGMASK = RD_OP_USERBASE,
+    ARM_OP_PSR,
+} ARMOperands;
 
 static int _capstone_arm32_reg_to_index(arm_reg reg) {
     switch(reg) {
@@ -123,10 +126,14 @@ void capstone_plugin_arm32_emulate(RDContext* ctx, const RDInstruction* instr,
                 if(src->kind == RD_OP_MEM) {
                     u32 val;
 
-                    bool ok = is_be ? rd_read_be32(ctx, src->mem, &val)
-                                    : rd_read_le32(ctx, src->mem, &val);
+                    bool ok = !rd_is_writable(ctx, src->mem) &&
+                              (is_be ? rd_read_be32(ctx, src->mem, &val)
+                                     : rd_read_le32(ctx, src->mem, &val));
 
-                    if(ok) _capstone_arm32_set_regval(ctx, dst->reg, val);
+                    if(ok)
+                        _capstone_arm32_set_regval(ctx, dst->reg, val);
+                    else
+                        rd_del_regval_id(ctx, dst->reg);
                 }
                 else if(src->kind == RD_OP_DISPL) {
                     RDRegValue base;
@@ -149,7 +156,40 @@ void capstone_plugin_arm32_emulate(RDContext* ctx, const RDInstruction* instr,
             break;
         }
 
-        default: break;
+        case ARM_INS_BX:
+        case ARM_INS_BLX: {
+            const RDOperand* op = &instr->operands[0];
+            // BLX imm is handled below, by the operand loop
+            if(op->kind != RD_OP_REG) break;
+            if(op->reg == ARM_REG_LR || op->reg == ARM_REG_PC) break;
+
+            RDRegValue v;
+            if(!_capstone_arm32_get_regval(ctx, instr->address, op->reg, &v,
+                                           capstone))
+                break; // unknown value: do nothing
+
+            u32 target = (u32)v;
+            bool to_thumb = target & 1; // interworking: bit 0 picks the mode
+            RDAddress addr = target & ~1U;
+
+            if(!rd_is_executable(ctx, addr)) break;
+            // ARM target must be word-aligned
+            if(!to_thumb && (addr & 3)) break;
+
+            rd_auto_sregval(ctx, addr, "T", to_thumb);
+            rd_add_xref(ctx, instr->address, addr,
+                        rd_instr_is_call(instr) ? RD_CR_CALL : RD_CR_JUMP);
+            break;
+        }
+
+        default: {
+            rd_foreach_operand(i, op, instr) {
+                if(op->kind == RD_OP_REG && op->userdata2)
+                    rd_del_regval_id(ctx, op->reg);
+            }
+
+            break;
+        }
     }
 
     rd_foreach_operand(i, op, instr) {
@@ -180,6 +220,7 @@ void capstone_plugin_arm32_emulate(RDContext* ctx, const RDInstruction* instr,
 
             const RDOperand* dst = &instr->operands[0];
             const RDOperand* src = &instr->operands[1];
+
             if(dst->kind == RD_OP_REG && src->kind == RD_OP_MEM)
                 rd_auto_type(ctx, src->mem, "u32", 0, RD_TYPE_PTR);
         }
@@ -230,6 +271,27 @@ bool capstone_plugin_arm32_render_operand(RDRenderer* r,
         }
 
         rd_renderer_norm(r, "}");
+        return true;
+    }
+
+    if(op->kind == ARM_OP_PSR) {
+        char name[10]; // "cpsr_fsxc" + '\0'
+        static_assert(sizeof("cpsr_fsxc") <= sizeof(name),
+                      "PSR name buffer too small");
+
+        usize n = 4;
+        memcpy(name, op->user.val1 ? "spsr" : "cpsr", n);
+
+        if(op->user.val2 && op->user.val2 <= 0xF) {
+            name[n++] = '_';
+            if(op->user.val2 & 8) name[n++] = 'f';
+            if(op->user.val2 & 4) name[n++] = 's';
+            if(op->user.val2 & 2) name[n++] = 'x';
+            if(op->user.val2 & 1) name[n++] = 'c';
+        }
+
+        name[n] = '\0';
+        rd_renderer_text(r, name, RD_THEME_REG, RD_THEME_BACKGROUND);
         return true;
     }
 
@@ -348,4 +410,10 @@ bool capstone_arm32_decode_flow(const cs_insn* cs_insn, RDInstruction* instr) {
     }
 
     return false;
+}
+
+void capstone_arm32_decode_psr(const cs_arm_op* cop, RDOperand* op) {
+    op->kind = ARM_OP_PSR;
+    op->user.val1 = cop->type == ARM_OP_SPSR; // 0 = CPSR, 1 = SPSR
+    op->user.val2 = cop->sysop.msr_mask;      // bit3=f, bit2=s, bit1=x, bit0=c
 }

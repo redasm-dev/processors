@@ -80,9 +80,10 @@ void capstone_arm32_decode(RDContext* ctx, RDInstruction* instr,
             case ARM_OP_REG:
                 op->kind = RD_OP_REG;
                 op->reg = cop->reg;
+                op->userdata2 = (cop->access & CS_AC_WRITE) != 0;
                 break;
 
-            case ARM_OP_IMM:
+            case ARM_OP_IMM: {
                 if(rd_instr_is_branch(instr)) {
                     op->kind = RD_OP_ADDR;
                     op->addr = (RDAddress)(cop->imm & ~1);
@@ -91,9 +92,11 @@ void capstone_arm32_decode(RDContext* ctx, RDInstruction* instr,
                     op->kind = RD_OP_IMM;
                     op->s_imm = cop->imm;
                 }
-                break;
 
-            case ARM_OP_MEM:
+                break;
+            }
+
+            case ARM_OP_MEM: {
                 if(cop->mem.base == ARM_REG_PC &&
                    cop->mem.index == ARM_REG_INVALID) {
                     op->kind = RD_OP_MEM;
@@ -115,6 +118,10 @@ void capstone_arm32_decode(RDContext* ctx, RDInstruction* instr,
                 }
 
                 break;
+            }
+
+            case ARM_OP_CPSR:
+            case ARM_OP_SPSR: capstone_arm32_decode_psr(cop, op); break;
 
             default: break;
         }
