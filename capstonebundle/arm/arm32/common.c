@@ -106,7 +106,6 @@ static void _capstone_arm32_clear_written(RDContext* ctx,
 void capstone_plugin_arm32_emulate(RDContext* ctx, const RDInstruction* instr,
                                    RDProcessor* p) {
     const ARMCapstone* capstone = (const ARMCapstone*)p;
-    RDAddress next = instr->address + instr->length;
 
     RDRegValue t;
     bool is_thumb = rd_get_sregval(ctx, instr->address, "T", &t) && t != 0;
@@ -143,6 +142,8 @@ void capstone_plugin_arm32_emulate(RDContext* ctx, const RDInstruction* instr,
                 else
                     rd_del_regval_id(ctx, dst->reg);
             }
+            else
+                _capstone_arm32_clear_written(ctx, instr);
 
             break;
         }
@@ -164,6 +165,8 @@ void capstone_plugin_arm32_emulate(RDContext* ctx, const RDInstruction* instr,
                 if(rd_is_address(ctx, result))
                     rd_add_xref(ctx, instr->address, result, RD_DR_ADDRESS);
             }
+            else
+                rd_del_regval_id(ctx, instr->operands[0].reg);
 
             break;
         }
@@ -393,8 +396,9 @@ bool capstone_arm32_simplify(const cs_insn* cs_insn, RDInstruction* instr,
             const cs_arm_op* rn = &d->operands[1];
             const cs_arm_op* imm = &d->operands[2];
 
-            if(rd->type != ARM_OP_REG || rn->type != ARM_OP_REG ||
-               rn->reg != ARM_REG_PC || imm->type != ARM_OP_IMM)
+            if(rd->type != ARM_OP_REG || rd->reg == ARM_REG_PC ||
+               rn->type != ARM_OP_REG || rn->reg != ARM_REG_PC ||
+               imm->type != ARM_OP_IMM)
                 return false;
 
             i64 off = instr->id == ARM_INS_SUB ? -imm->imm : imm->imm;
