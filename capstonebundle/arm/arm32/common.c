@@ -335,6 +335,42 @@ bool capstone_arm32_decode_regmask(const cs_insn* cs_insn, RDInstruction* instr,
     return op->imm & (1U << 15);
 }
 
+bool capstone_arm32_simplify(const cs_insn* cs_insn, RDInstruction* instr,
+                             RDProcessor* p) {
+    const ARMCapstone* capstone = (const ARMCapstone*)p;
+
+    const cs_arm* d = &cs_insn->detail->arm;
+
+    switch(instr->id) {
+        case ARM_INS_ADD:
+        case ARM_INS_SUB: {
+            // add/sub rd, pc, #imm  ->  adr rd, <address>
+            if(d->op_count != 3 || d->update_flags) return false;
+            if(d->cc != ARMCC_AL && d->cc != ARMCC_Invalid) return false;
+
+            const cs_arm_op* rd = &d->operands[0];
+            const cs_arm_op* rn = &d->operands[1];
+            const cs_arm_op* imm = &d->operands[2];
+
+            if(rd->type != ARM_OP_REG || rn->type != ARM_OP_REG ||
+               rn->reg != ARM_REG_PC || imm->type != ARM_OP_IMM)
+                return false;
+
+            i64 off = instr->id == ARM_INS_SUB ? -imm->imm : imm->imm;
+
+            RDOperand* dst = rd_instr_set_op_reg(instr, 0, rd->reg);
+            dst->userdata2 = (rd->access & CS_AC_WRITE) != 0;
+
+            RDAddress pc = capstone->get_pc(instr->address);
+            rd_instr_set_op_addr(instr, 1, pc + off);
+            rd_instr_set_mnemonic(instr, "adr");
+            return true;
+        }
+
+        default: return false;
+    }
+}
+
 bool capstone_arm32_decode_flow(const cs_insn* cs_insn, RDInstruction* instr) {
     const cs_arm* d = &cs_insn->detail->arm;
 

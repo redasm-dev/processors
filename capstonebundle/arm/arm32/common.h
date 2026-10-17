@@ -20,5 +20,7 @@ bool capstone_plugin_arm32_render_operand(RDRenderer* r,
 bool capstone_arm32_decode_regmask(const cs_insn* cs_insn, RDInstruction* instr,
                                    usize idx);
 
+bool capstone_arm32_simplify(const cs_insn* cs_insn, RDInstruction* instr,
+                             RDProcessor* p);
 bool capstone_arm32_decode_flow(const cs_insn* cs_insn, RDInstruction* instr);
 void capstone_arm32_decode_psr(const cs_arm_op* cop, RDOperand* op);

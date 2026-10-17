@@ -72,6 +72,8 @@ void capstone_arm32_decode(RDContext* ctx, RDInstruction* instr,
         }
     }
 
+    if(capstone_arm32_simplify(cs_insn, instr, p)) return;
+
     for(int i = 0; i < d->op_count && i < RD_MAX_OPERANDS; i++) {
         const cs_arm_op* cop = &d->operands[i];
         RDOperand* op = &instr->operands[i];

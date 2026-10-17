@@ -39,6 +39,7 @@ void capstone_thumb_decode(RDContext* ctx, RDInstruction* instr,
     const cs_arm* d = &cs_insn->detail->arm;
     instr->write_back = cs_insn->detail->writeback;
 
+    if(capstone_arm32_simplify(cs_insn, instr, p)) return;
     if(capstone_arm32_decode_flow(cs_insn, instr)) return;
 
     for(int i = 0; i < d->op_count && i < RD_MAX_OPERANDS; i++) {
