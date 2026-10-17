@@ -137,19 +137,30 @@ void capstone_plugin_arm32_emulate(RDContext* ctx, const RDInstruction* instr,
                 }
                 else if(src->kind == RD_OP_DISPL) {
                     RDRegValue base;
-                    if(_capstone_arm32_get_regval(ctx, instr->address,
-                                                  src->displ.base, &base,
-                                                  capstone)) {
+                    u32 val;
+                    bool ok = src->displ.index == RD_REGID_INVALID &&
+                              _capstone_arm32_get_regval(ctx, instr->address,
+                                                         src->displ.base, &base,
+                                                         capstone);
 
-                        RDAddress addr = base + src->displ.offset;
+                    if(ok) {
+                        // post-index reads [base]
+                        RDAddress addr =
+                            (u32)base +
+                            (src->userdata1 ? 0 : (i32)src->displ.offset);
 
-                        if(dst->reg == ARM_REG_PC) {
-                            rd_add_xref(ctx, instr->address, addr, RD_CR_JUMP);
-                            return;
-                        }
-
-                        _capstone_arm32_set_regval(ctx, dst->reg, addr);
+                        ok = !rd_is_writable(ctx, addr) &&
+                             (is_be ? rd_read_be32(ctx, addr, &val)
+                                    : rd_read_le32(ctx, addr, &val));
                     }
+
+                    if(ok)
+                        _capstone_arm32_set_regval(ctx, dst->reg, val);
+                    else
+                        rd_del_regval_id(ctx, dst->reg);
+
+                    if(instr->write_back)
+                        rd_del_regval_id(ctx, src->displ.base);
                 }
             }
 
@@ -241,17 +252,23 @@ bool capstone_plugin_arm32_render_operand(RDRenderer* r,
     const RDOperand* op = &instr->operands[idx];
 
     if(op->kind == RD_OP_MEM && instr->id == ARM_INS_LDR && idx == 1) {
-        RDContext* ctx = rd_renderer_get_context(r);
-        u32 v;
-
+        u32 dst;
         bool ok = !rd_is_writable(ctx, op->mem) &&
-                  (is_be ? rd_read_be32(ctx, op->mem, &v)
-                         : rd_read_le32(ctx, op->mem, &v));
+                  (is_be ? rd_read_be32(ctx, op->mem, &dst)
+                         : rd_read_le32(ctx, op->mem, &dst));
 
         if(!ok) return false;
 
+        RDAddress addr = dst;
+        if((dst & 1) && rd_is_code(ctx, dst & ~1U)) addr = dst & ~1U;
+
         rd_renderer_norm(r, "=");
-        rd_renderer_loc(r, (RDAddress)v & ~1U, 8, RD_NUM_DEFAULT);
+
+        if(rd_is_address(ctx, dst))
+            rd_renderer_loc(r, addr, 8, RD_NUM_DEFAULT);
+        else
+            rd_renderer_num(r, addr, 16, 0, RD_NUM_DEFAULT);
+
         return true;
     }
 
