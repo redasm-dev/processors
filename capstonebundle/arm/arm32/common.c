@@ -67,17 +67,67 @@ static void _capstone_arm32_set_regval(RDContext* ctx, arm_reg reg,
     rd_set_regval_id(ctx, reg, val);
 }
 
+static void _capstone_arm32_branch_to(RDContext* ctx,
+                                      const RDInstruction* instr, u32 value,
+                                      bool interwork) {
+    bool to_thumb = interwork && (value & 1);
+    RDAddress addr = value & ~1U;
+
+    if(!interwork && (value & 1))
+        return; // ldr pc: bit 0 is only meaningful on ARMv5+
+
+    if(!rd_is_executable(ctx, addr)) return;
+    if(!to_thumb && (addr & 3)) return;
+
+    rd_auto_sregval(ctx, addr, "T", to_thumb);
+    rd_add_xref(ctx, instr->address, addr,
+                rd_instr_is_call(instr) ? RD_CR_CALL : RD_CR_JUMP);
+}
+
+static bool _capstone_arm32_read_const32(RDContext* ctx, RDAddress addr,
+                                         u32* val) {
+    const RDProcessorPlugin* plugin = rd_get_processor_plugin(ctx);
+    bool is_be = plugin->flags & RD_PF_BE;
+
+    if(rd_is_writable(ctx, addr)) return false;
+    return is_be ? rd_read_be32(ctx, addr, val) : rd_read_le32(ctx, addr, val);
+}
+
+static void _capstone_arm32_clear_written(RDContext* ctx,
+                                          const RDInstruction* instr) {
+    rd_foreach_operand(i, op, instr) {
+        if(op->kind == RD_OP_REG && op->userdata2)
+            rd_del_regval_id(ctx, op->reg);
+        else if(op->kind == RD_OP_DISPL && instr->write_back)
+            rd_del_regval_id(ctx, op->displ.base);
+    }
+}
+
 void capstone_plugin_arm32_emulate(RDContext* ctx, const RDInstruction* instr,
                                    RDProcessor* p) {
     const ARMCapstone* capstone = (const ARMCapstone*)p;
-    const RDProcessorPlugin* plugin = rd_get_processor_plugin(ctx);
-    bool is_be = plugin->flags & RD_PF_BE;
     RDAddress next = instr->address + instr->length;
 
     RDRegValue t;
     bool is_thumb = rd_get_sregval(ctx, instr->address, "T", &t) && t != 0;
 
     switch(instr->id) {
+        case ARM_INS_ADD:
+        case ARM_INS_SUB: {
+            const RDOperand* dst = &instr->operands[0];
+            const RDOperand* src = &instr->operands[1];
+
+            // simplified adr
+            if(dst->kind == RD_OP_REG && src->kind == RD_OP_ADDR) {
+                _capstone_arm32_set_regval(ctx, dst->reg,
+                                           (u32)(src->addr | src->userdata1));
+            }
+            else // ordinary add/sub: result unknown
+                _capstone_arm32_clear_written(ctx, instr);
+
+            break;
+        }
+
         case ARM_INS_MOV: {
             const RDOperand* dst = &instr->operands[0];
             const RDOperand* src = &instr->operands[1];
@@ -121,48 +171,42 @@ void capstone_plugin_arm32_emulate(RDContext* ctx, const RDInstruction* instr,
         case ARM_INS_LDR: {
             const RDOperand* dst = &instr->operands[0];
             const RDOperand* src = &instr->operands[1];
+            if(dst->kind != RD_OP_REG) break;
 
-            if(dst->kind == RD_OP_REG) {
-                if(src->kind == RD_OP_MEM) {
-                    u32 val;
+            RDAddress addr = 0;
+            bool known = false;
 
-                    bool ok = !rd_is_writable(ctx, src->mem) &&
-                              (is_be ? rd_read_be32(ctx, src->mem, &val)
-                                     : rd_read_le32(ctx, src->mem, &val));
+            if(src->kind == RD_OP_MEM) {
+                addr = src->mem;
+                known = true;
+            }
+            else if(src->kind == RD_OP_DISPL) {
+                RDRegValue base;
+                if(src->displ.index == RD_REGID_INVALID &&
+                   _capstone_arm32_get_regval(
+                       ctx, instr->address, src->displ.base, &base, capstone)) {
 
-                    if(ok)
-                        _capstone_arm32_set_regval(ctx, dst->reg, val);
-                    else
-                        rd_del_regval_id(ctx, dst->reg);
-                }
-                else if(src->kind == RD_OP_DISPL) {
-                    RDRegValue base;
-                    u32 val;
-                    bool ok = src->displ.index == RD_REGID_INVALID &&
-                              _capstone_arm32_get_regval(ctx, instr->address,
-                                                         src->displ.base, &base,
-                                                         capstone);
-
-                    if(ok) {
-                        // post-index reads [base]
-                        RDAddress addr =
-                            (u32)base +
-                            (src->userdata1 ? 0 : (i32)src->displ.offset);
-
-                        ok = !rd_is_writable(ctx, addr) &&
-                             (is_be ? rd_read_be32(ctx, addr, &val)
-                                    : rd_read_le32(ctx, addr, &val));
-                    }
-
-                    if(ok)
-                        _capstone_arm32_set_regval(ctx, dst->reg, val);
-                    else
-                        rd_del_regval_id(ctx, dst->reg);
-
-                    if(instr->write_back)
-                        rd_del_regval_id(ctx, src->displ.base);
+                    // post-index reads [base]
+                    addr = (u32)base +
+                           (src->userdata1 ? 0 : (i32)src->displ.offset);
+                    known = true;
                 }
             }
+
+            u32 val;
+            bool ok = known && _capstone_arm32_read_const32(ctx, addr, &val);
+
+            if(dst->reg == ARM_REG_PC) {
+                // never track pc in the register map, just follow the target
+                if(ok) _capstone_arm32_branch_to(ctx, instr, val, false);
+            }
+            else if(ok)
+                _capstone_arm32_set_regval(ctx, dst->reg, val);
+            else
+                rd_del_regval_id(ctx, dst->reg);
+
+            if(src->kind == RD_OP_DISPL && instr->write_back)
+                rd_del_regval_id(ctx, src->displ.base);
 
             break;
         }
@@ -179,28 +223,11 @@ void capstone_plugin_arm32_emulate(RDContext* ctx, const RDInstruction* instr,
                                            capstone))
                 break; // unknown value: do nothing
 
-            u32 target = (u32)v;
-            bool to_thumb = target & 1; // interworking: bit 0 picks the mode
-            RDAddress addr = target & ~1U;
-
-            if(!rd_is_executable(ctx, addr)) break;
-            // ARM target must be word-aligned
-            if(!to_thumb && (addr & 3)) break;
-
-            rd_auto_sregval(ctx, addr, "T", to_thumb);
-            rd_add_xref(ctx, instr->address, addr,
-                        rd_instr_is_call(instr) ? RD_CR_CALL : RD_CR_JUMP);
+            _capstone_arm32_branch_to(ctx, instr, (u32)v, true);
             break;
         }
 
-        default: {
-            rd_foreach_operand(i, op, instr) {
-                if(op->kind == RD_OP_REG && op->userdata2)
-                    rd_del_regval_id(ctx, op->reg);
-            }
-
-            break;
-        }
+        default: _capstone_arm32_clear_written(ctx, instr); break;
     }
 
     rd_foreach_operand(i, op, instr) {
@@ -253,10 +280,7 @@ bool capstone_plugin_arm32_render_operand(RDRenderer* r,
 
     if(op->kind == RD_OP_MEM && instr->id == ARM_INS_LDR && idx == 1) {
         u32 dst;
-        bool ok = !rd_is_writable(ctx, op->mem) &&
-                  (is_be ? rd_read_be32(ctx, op->mem, &dst)
-                         : rd_read_le32(ctx, op->mem, &dst));
-
+        bool ok = _capstone_arm32_read_const32(ctx, op->mem, &dst);
         if(!ok) return false;
 
         RDAddress addr = dst;
@@ -379,7 +403,11 @@ bool capstone_arm32_simplify(const cs_insn* cs_insn, RDInstruction* instr,
             dst->userdata2 = (rd->access & CS_AC_WRITE) != 0;
 
             RDAddress pc = capstone->get_pc(instr->address);
-            rd_instr_set_op_addr(instr, 1, pc + off);
+            RDAddress target = pc + off;
+
+            RDOperand* op = rd_instr_set_op_addr(instr, 1, target & ~1U);
+            op->userdata1 = target & 1; // exact runtime value
+
             rd_instr_set_mnemonic(instr, "adr");
             return true;
         }
