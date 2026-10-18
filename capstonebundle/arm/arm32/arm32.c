@@ -55,23 +55,15 @@ void capstone_arm32_decode(RDContext* ctx, RDInstruction* instr,
         capstone_plugin_decode(instr, data, rd_count_of(data), p);
     if(!cs_insn) return;
 
+    if(instr->address == 0x11138) {
+        int zzz = 0;
+        zzz++;
+    }
+
     const cs_arm* d = &cs_insn->detail->arm;
     instr->write_back = cs_insn->detail->writeback;
 
-    switch(cs_insn->id) {
-        case ARM_INS_MOV: { // MOV PC, LR = return
-            if(d->operands[0].reg == ARM_REG_PC &&
-               d->operands[1].reg == ARM_REG_LR)
-                instr->flow = RD_IF_STOP;
-            break;
-        }
-
-        default: {
-            if(capstone_arm32_decode_flow(cs_insn, instr)) return;
-            break;
-        }
-    }
-
+    if(capstone_arm32_decode_flow(cs_insn, instr)) return;
     if(capstone_arm32_simplify(cs_insn, instr, p)) return;
 
     for(int i = 0; i < d->op_count && i < RD_MAX_OPERANDS; i++) {
@@ -148,13 +140,6 @@ static void arm32_emulate(RDContext* ctx, const RDInstruction* instr,
 
     RDRegValue t;
     bool is_thumb = rd_get_sregval(ctx, instr->address, "T", &t) && t != 0;
-
-    if(instr->id == ARM_INS_BLX) {
-        const RDOperand* op = &instr->operands[0];
-
-        if(op->kind == RD_OP_ADDR)
-            rd_auto_sregval(ctx, op->addr, "T", !is_thumb);
-    }
 
     if(is_thumb)
         capstone_plugin_arm32_emulate(ctx, instr, (RDProcessor*)self->thumb);
