@@ -55,11 +55,6 @@ void capstone_arm32_decode(RDContext* ctx, RDInstruction* instr,
         capstone_plugin_decode(instr, data, rd_count_of(data), p);
     if(!cs_insn) return;
 
-    if(instr->address == 0x11138) {
-        int zzz = 0;
-        zzz++;
-    }
-
     const cs_arm* d = &cs_insn->detail->arm;
     instr->write_back = cs_insn->detail->writeback;
 

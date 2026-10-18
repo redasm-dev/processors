@@ -213,8 +213,9 @@ static void _capstone_arm32_track(RDContext* ctx, const RDInstruction* instr,
             else if(dst->kind == RD_OP_REG && src->kind == RD_OP_REG) {
                 RDRegValue val;
                 if(_capstone_arm32_get_regval(ctx, instr->address, src->reg,
-                                              &val, capstone))
+                                              &val, capstone)) {
                     _capstone_arm32_set_regval(ctx, dst->reg, val);
+                }
                 else
                     rd_del_regval_id(ctx, dst->reg);
             }
@@ -238,8 +239,7 @@ static void _capstone_arm32_track(RDContext* ctx, const RDInstruction* instr,
                 u32 result =
                     ((u32)instr->operands[1].s_imm << 16) | (lo & 0xFFFF);
                 _capstone_arm32_set_regval(ctx, instr->operands[0].reg, result);
-                if(rd_is_address(ctx, result))
-                    rd_add_xref(ctx, instr->address, result, RD_DR_ADDRESS);
+                rd_add_xref(ctx, instr->address, result, RD_DR_ADDRESS);
             }
             else
                 rd_del_regval_id(ctx, instr->operands[0].reg);
@@ -334,8 +334,15 @@ static void _capstone_arm32_xref_operands(RDContext* ctx,
             rd_add_xref(ctx, instr->address, op->mem, RD_DR_READ);
 
             // ldr rX, <literal>: the word is a pointer
-            if(instr->id == ARM_INS_LDR && i == 1)
+            if(instr->id == ARM_INS_LDR && i == 1) {
                 rd_auto_type(ctx, op->mem, "u32", 0, RD_TYPE_PTR);
+
+                u32 val;
+                if(_capstone_arm32_read_const32(ctx, op->mem, &val) &&
+                   !(val & 1)) {
+                    rd_add_xref(ctx, instr->address, val, RD_DR_ADDRESS);
+                }
+            }
         }
     }
 }
