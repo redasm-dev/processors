@@ -170,8 +170,9 @@ bool z80_query_reg(RDQueryReg* q, RDProcessor* p) {
         q->id = _z80_get_reg_id(q->name);
         if(q->id == Z80_REG_INVALID) return false;
     }
-    else
+    else {
         return false;
+    }
 
     if(q->want & RD_QUERY_REG_WANT_MASK) {
         if(!_z80_get_reg_mask(q->name, &q->mask)) return false;
