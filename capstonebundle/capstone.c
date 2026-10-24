@@ -40,10 +40,11 @@ bool capstone_plugin_query_reg(RDQueryReg* q, RDProcessor* p) {
         q->name = cs_reg_name(self->handle, (unsigned int)q->id);
         if(!q->name) return false;
     }
-    else // other flags not implemented
-        return false;
+    else { // other flags not implemented
+        return 0;
+    }
 
-    if(q->want & RD_QUERY_REG_WANT_CANONICAL) q->canonical_name = q->name;
+    if(q->want & RD_QUERY_REG_WANT_ROOT) q->root_name = q->name;
 
     return true;
 }

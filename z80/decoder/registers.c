@@ -2,7 +2,7 @@
 #include "decoder.h"
 #include <string.h>
 
-static Z80RegId _z80_reg_canonical(Z80RegId id) {
+static Z80RegId _z80_reg_root(Z80RegId id) {
     switch(id) {
         case Z80_REG_B:
         case Z80_REG_C: return Z80_REG_BC;
@@ -17,10 +17,9 @@ static Z80RegId _z80_reg_canonical(Z80RegId id) {
         case Z80_REG_IXL: return Z80_REG_IX;
 
         case Z80_REG_IYH:
-        case Z80_REG_IYL:
-            return Z80_REG_IY;
+        case Z80_REG_IYL: return Z80_REG_IY;
 
-            // A, HL, BC, DE, SP, IX, IY, I, R, shadows: already canonical
+        // A, HL, BC, DE, SP, IX, IY, I, R, shadows: already roots
         default: return id;
     }
 }
@@ -178,9 +177,9 @@ bool z80_query_reg(RDQueryReg* q, RDProcessor* p) {
         if(!_z80_get_reg_mask(q->name, &q->mask)) return false;
     }
 
-    if(q->want & RD_QUERY_REG_WANT_CANONICAL) {
-        q->canonical_name = _z80_get_reg_name(_z80_reg_canonical(q->id));
-        if(!q->canonical_name) return false;
+    if(q->want & RD_QUERY_REG_WANT_ROOT) {
+        q->root_name = _z80_get_reg_name(_z80_reg_root(q->id));
+        if(!q->root_name) return false;
     }
 
     return true;

@@ -85,10 +85,11 @@ static bool mips32_query_reg(RDQueryReg* q, RDProcessor* p) {
         q->id = mips_get_register_id(q->name);
         if(q->id == RD_REGID_INVALID) return false;
     }
-    else
+    else {
         return false;
+    }
 
-    if(q->want & RD_QUERY_REG_WANT_CANONICAL) q->canonical_name = q->name;
+    if(q->want & RD_QUERY_REG_WANT_ROOT) q->root_name = q->name;
 
     return true;
 }
@@ -152,8 +153,9 @@ static void mips32_emulate(RDContext* ctx, const RDInstruction* instr,
                 if(rd_is_address(ctx, result))
                     rd_add_xref(ctx, instr->address, result, RD_DR_ADDRESS);
             }
-            else
+            else {
                 mips_del_regval(ctx, next, instr->operands[0].reg);
+            }
 
             break;
         }
@@ -168,8 +170,9 @@ static void mips32_emulate(RDContext* ctx, const RDInstruction* instr,
                 if(rd_is_address(ctx, result))
                     rd_add_xref(ctx, instr->address, result, RD_DR_ADDRESS);
             }
-            else
+            else {
                 mips_del_regval(ctx, next, instr->operands[0].reg);
+            }
 
             break;
         }

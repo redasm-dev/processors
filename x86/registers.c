@@ -12,7 +12,7 @@ static RDReg _x86_get_register_id(const char* name) {
     return RD_REGID_INVALID;
 }
 
-static RDReg _x86_canonical_reg(RDReg r) {
+static RDReg _x86_root_reg(RDReg r) {
     switch(r) {
         case ZYDIS_REGISTER_AL:
         case ZYDIS_REGISTER_AH:
@@ -188,8 +188,9 @@ void x86_track_math(RDContext* ctx, const RDInstruction* instr) {
         rhs = src->imm;
         rhs_known = true;
     }
-    else if(src->kind == RD_OP_REG)
+    else if(src->kind == RD_OP_REG) {
         rhs_known = x86_get_regval(ctx, instr->address, src->reg, &rhs);
+    }
 
     if(!lhs_known || !rhs_known) {
         x86_del_regval(ctx, next, dst->reg);
@@ -279,16 +280,17 @@ bool x86_query_reg(RDQueryReg* q, RDProcessor* p) {
         q->id = _x86_get_register_id(q->name);
         if(q->id == RD_REGID_INVALID) return false;
     }
-    else
+    else {
         return false;
+    }
 
     if(q->want & RD_QUERY_REG_WANT_MASK) {
         if(!_x86_get_reg_mask(q->id, &q->mask)) return false;
     }
 
-    if(q->want & RD_QUERY_REG_WANT_CANONICAL) {
-        q->canonical_name = ZydisRegisterGetString(_x86_canonical_reg(q->id));
-        if(!q->canonical_name) return false;
+    if(q->want & RD_QUERY_REG_WANT_ROOT) {
+        q->root_name = ZydisRegisterGetString(_x86_root_reg(q->id));
+        if(!q->root_name) return false;
     }
 
     return true;
