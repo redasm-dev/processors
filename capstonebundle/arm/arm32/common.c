@@ -129,8 +129,9 @@ static void _capstone_arm32_branch_to(RDContext* ctx,
     // never change the mode of code that is already decoded
     if(!rd_is_code(ctx, addr)) rd_auto_sregval(ctx, addr, "T", to_thumb);
 
-    rd_add_xref(ctx, instr->address, addr,
-                _capstone_arm32_is_call(ctx, instr) ? RD_CR_CALL : RD_CR_JUMP);
+    rd_auto_xref_add(ctx, instr->address, addr,
+                     _capstone_arm32_is_call(ctx, instr) ? RD_CR_CALL
+                                                         : RD_CR_JUMP);
 }
 
 static bool _capstone_arm32_read_const32(RDContext* ctx, RDAddress addr,
@@ -239,7 +240,7 @@ static void _capstone_arm32_track(RDContext* ctx, const RDInstruction* instr,
                 u32 result =
                     ((u32)instr->operands[1].s_imm << 16) | (lo & 0xFFFF);
                 _capstone_arm32_set_regval(ctx, instr->operands[0].reg, result);
-                rd_add_xref(ctx, instr->address, result, RD_DR_ADDRESS);
+                rd_auto_xref_add(ctx, instr->address, result, RD_DR_ADDRESS);
             }
             else
                 rd_del_regval_id(ctx, instr->operands[0].reg);
@@ -323,15 +324,16 @@ static void _capstone_arm32_xref_operands(RDContext* ctx,
                     instr->id == ARM_INS_BLX ? !is_thumb : is_thumb;
 
                 rd_auto_sregval(ctx, op->addr, "T", target_thumb);
-                rd_add_xref(ctx, instr->address, op->addr,
-                            _capstone_arm32_is_call(ctx, instr) ? RD_CR_CALL
-                                                                : RD_CR_JUMP);
+                rd_auto_xref_add(ctx, instr->address, op->addr,
+                                 _capstone_arm32_is_call(ctx, instr)
+                                     ? RD_CR_CALL
+                                     : RD_CR_JUMP);
             }
             else // adr
-                rd_add_xref(ctx, instr->address, op->addr, RD_DR_ADDRESS);
+                rd_auto_xref_add(ctx, instr->address, op->addr, RD_DR_ADDRESS);
         }
         else if(op->kind == RD_OP_MEM && rd_is_address(ctx, op->mem)) {
-            rd_add_xref(ctx, instr->address, op->mem, RD_DR_READ);
+            rd_auto_xref_add(ctx, instr->address, op->mem, RD_DR_READ);
 
             // ldr rX, <literal>: the word is a pointer
             if(instr->id == ARM_INS_LDR && i == 1) {
@@ -340,7 +342,7 @@ static void _capstone_arm32_xref_operands(RDContext* ctx,
                 u32 val;
                 if(_capstone_arm32_read_const32(ctx, op->mem, &val) &&
                    !(val & 1)) {
-                    rd_add_xref(ctx, instr->address, val, RD_DR_ADDRESS);
+                    rd_auto_xref_add(ctx, instr->address, val, RD_DR_ADDRESS);
                 }
             }
         }

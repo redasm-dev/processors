@@ -10,9 +10,9 @@ static void _mips_handle_operands(RDContext* ctx, const RDInstruction* instr) {
         switch(op->kind) {
             case RD_OP_ADDR: {
                 if(rd_instr_is_call(instr))
-                    rd_add_xref(ctx, instr->address, op->addr, RD_CR_CALL);
+                    rd_auto_xref_add(ctx, instr->address, op->addr, RD_CR_CALL);
                 else if(rd_instr_is_jump(instr))
-                    rd_add_xref(ctx, instr->address, op->addr, RD_CR_JUMP);
+                    rd_auto_xref_add(ctx, instr->address, op->addr, RD_CR_JUMP);
                 break;
             };
 
@@ -105,15 +105,15 @@ static void mips32_emulate(RDContext* ctx, const RDInstruction* instr,
     switch(instr->id) {
         case MIPS_MACRO_LW:
         case MIPS_MACRO_LHU: {
-            rd_add_xref(ctx, instr->address, instr->operands[1].addr,
-                        RD_DR_READ);
+            rd_auto_xref_add(ctx, instr->address, instr->operands[1].addr,
+                             RD_DR_READ);
             break;
         }
 
         case MIPS_MACRO_SW:
         case MIPS_MACRO_SH: {
-            rd_add_xref(ctx, instr->address, instr->operands[1].addr,
-                        RD_DR_WRITE);
+            rd_auto_xref_add(ctx, instr->address, instr->operands[1].addr,
+                             RD_DR_WRITE);
             break;
         }
 
@@ -151,7 +151,8 @@ static void mips32_emulate(RDContext* ctx, const RDInstruction* instr,
                     (u32)((i32)val + (i16)instr->operands[2].imm);
                 mips_set_regval(ctx, next, instr->operands[0].reg, result);
                 if(rd_is_address(ctx, result))
-                    rd_add_xref(ctx, instr->address, result, RD_DR_ADDRESS);
+                    rd_auto_xref_add(ctx, instr->address, result,
+                                     RD_DR_ADDRESS);
             }
             else {
                 mips_del_regval(ctx, next, instr->operands[0].reg);
@@ -168,7 +169,8 @@ static void mips32_emulate(RDContext* ctx, const RDInstruction* instr,
                 RDRegValue result = ((u32)val | (u16)instr->operands[2].imm);
                 mips_set_regval(ctx, next, instr->operands[0].reg, result);
                 if(rd_is_address(ctx, result))
-                    rd_add_xref(ctx, instr->address, result, RD_DR_ADDRESS);
+                    rd_auto_xref_add(ctx, instr->address, result,
+                                     RD_DR_ADDRESS);
             }
             else {
                 mips_del_regval(ctx, next, instr->operands[0].reg);
@@ -192,7 +194,7 @@ static void mips32_emulate(RDContext* ctx, const RDInstruction* instr,
             }
 
             RDAddress ea = ((i32)base + (i16)instr->operands[1].displ.offset);
-            rd_add_xref(ctx, instr->address, ea, RD_DR_READ);
+            rd_auto_xref_add(ctx, instr->address, ea, RD_DR_READ);
             break;
         }
 
@@ -208,7 +210,7 @@ static void mips32_emulate(RDContext* ctx, const RDInstruction* instr,
             }
 
             RDAddress ea = ((i32)base + (i16)instr->operands[1].displ.offset);
-            rd_add_xref(ctx, instr->address, ea, RD_DR_WRITE);
+            rd_auto_xref_add(ctx, instr->address, ea, RD_DR_WRITE);
             break;
         }
         default: _mips_handle_operands(ctx, instr); break;

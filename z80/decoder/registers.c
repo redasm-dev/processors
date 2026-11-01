@@ -263,8 +263,8 @@ void z80_track_derefs(RDContext* ctx, const RDInstruction* instr) {
 
         RDRegValue v;
         if(rd_get_regval_id(ctx, op->reg, &v)) {
-            rd_add_xref(ctx, instr->address, v,
-                        (i == 0) ? RD_DR_WRITE : RD_DR_READ);
+            rd_auto_xref_add(ctx, instr->address, v,
+                             (i == 0) ? RD_DR_WRITE : RD_DR_READ);
         }
     }
 }

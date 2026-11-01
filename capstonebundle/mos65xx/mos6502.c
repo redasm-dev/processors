@@ -176,12 +176,12 @@ static void mos6502_emulate(RDContext* ctx, const RDInstruction* instr,
         RDXRefType t = rd_instr_is_call(instr) ? RD_CR_CALL : RD_CR_JUMP;
 
         if(op->kind == RD_OP_ADDR) {
-            rd_add_xref(ctx, instr->address, op->addr, t);
+            rd_auto_xref_add(ctx, instr->address, op->addr, t);
         }
         else if(op->kind == RD_OP_MEM && instr->id == MOS65XX_INS_JMP) {
             u16 target;
             if(rd_read_le16(ctx, op->mem, &target))
-                rd_add_xref(ctx, instr->address, (RDAddress)target, t);
+                rd_auto_xref_add(ctx, instr->address, (RDAddress)target, t);
         }
     }
     else {
@@ -200,11 +200,11 @@ static void mos6502_emulate(RDContext* ctx, const RDInstruction* instr,
                  w = mos6502_is_write(instr->id);
 
             if(r && !w)
-                rd_add_xref(ctx, instr->address, addr, RD_DR_READ);
+                rd_auto_xref_add(ctx, instr->address, addr, RD_DR_READ);
             else if(w && !r)
-                rd_add_xref(ctx, instr->address, addr, RD_DR_WRITE);
+                rd_auto_xref_add(ctx, instr->address, addr, RD_DR_WRITE);
             else
-                rd_add_xref(ctx, instr->address, addr, RD_DR_ADDRESS);
+                rd_auto_xref_add(ctx, instr->address, addr, RD_DR_ADDRESS);
 
             if(instr->indirect) {
                 // zero-page pointer bytes for the indirect modes: 2 bytes

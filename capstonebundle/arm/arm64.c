@@ -104,14 +104,14 @@ static void arm64_emulate(RDContext* ctx, const RDInstruction* instr,
     rd_foreach_operand(i, op, instr) {
         if(op->kind == RD_OP_ADDR) {
             if(rd_instr_is_call(instr))
-                rd_add_xref(ctx, instr->address, op->addr, RD_CR_CALL);
+                rd_auto_xref_add(ctx, instr->address, op->addr, RD_CR_CALL);
             else if(rd_instr_is_jump(instr))
-                rd_add_xref(ctx, instr->address, op->addr, RD_CR_JUMP);
+                rd_auto_xref_add(ctx, instr->address, op->addr, RD_CR_JUMP);
             else
-                rd_add_xref(ctx, instr->address, op->addr, RD_DR_ADDRESS);
+                rd_auto_xref_add(ctx, instr->address, op->addr, RD_DR_ADDRESS);
         }
         else if(op->kind == RD_OP_MEM && rd_is_address(ctx, op->mem))
-            rd_add_xref(ctx, instr->address, op->mem, RD_DR_READ);
+            rd_auto_xref_add(ctx, instr->address, op->mem, RD_DR_READ);
     }
 
     // catch pc-relative loading

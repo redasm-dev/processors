@@ -107,11 +107,12 @@ static void _x86_default_emulate(RDContext* ctx, const RDInstruction* instr) {
         switch(op->kind) {
             case RD_OP_ADDR: {
                 if(rd_instr_is_jump(instr))
-                    rd_add_xref(ctx, instr->address, op->addr, RD_CR_JUMP);
+                    rd_auto_xref_add(ctx, instr->address, op->addr, RD_CR_JUMP);
                 else if(rd_instr_is_call(instr))
-                    rd_add_xref(ctx, instr->address, op->addr, RD_CR_CALL);
+                    rd_auto_xref_add(ctx, instr->address, op->addr, RD_CR_CALL);
                 else
-                    rd_add_xref(ctx, instr->address, op->addr, RD_DR_ADDRESS);
+                    rd_auto_xref_add(ctx, instr->address, op->addr,
+                                     RD_DR_ADDRESS);
 
                 break;
             }
@@ -125,7 +126,7 @@ static void _x86_default_emulate(RDContext* ctx, const RDInstruction* instr) {
                 // lost.
                 _x86_try_set_type(ctx, op, op->mem);
 
-                rd_add_xref(ctx, instr->address, op->mem, RD_DR_READ);
+                rd_auto_xref_add(ctx, instr->address, op->mem, RD_DR_READ);
                 break;
             }
 

@@ -27,15 +27,15 @@ static void z80_emulate(RDContext* ctx, const RDInstruction* instr,
     rd_foreach_operand(i, op, instr) {
         if(op->kind == RD_OP_ADDR) {
             if(rd_instr_is_call(instr))
-                rd_add_xref(ctx, instr->address, op->addr, RD_CR_CALL);
+                rd_auto_xref_add(ctx, instr->address, op->addr, RD_CR_CALL);
             else if(rd_instr_is_jump(instr))
-                rd_add_xref(ctx, instr->address, op->addr, RD_CR_JUMP);
+                rd_auto_xref_add(ctx, instr->address, op->addr, RD_CR_JUMP);
             else
-                rd_add_xref(ctx, instr->address, op->addr, RD_DR_ADDRESS);
+                rd_auto_xref_add(ctx, instr->address, op->addr, RD_DR_ADDRESS);
         }
         else if(op->kind == Z80_USEROP_IND_NN) {
-            rd_add_xref(ctx, instr->address, op->imm,
-                        (i == 0) ? RD_DR_WRITE : RD_DR_READ);
+            rd_auto_xref_add(ctx, instr->address, op->imm,
+                             (i == 0) ? RD_DR_WRITE : RD_DR_READ);
         }
     }
 
