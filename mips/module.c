@@ -89,6 +89,7 @@ static bool mips32_query_reg(RDQueryReg* q, RDProcessor* p) {
         return false;
     }
 
+    if(q->want & RD_QUERY_REG_WANT_MASK) q->mask = rd_make_regmask(32, 0);
     if(q->want & RD_QUERY_REG_WANT_ROOT) q->root_name = q->name;
 
     return true;

@@ -110,8 +110,9 @@ static void arm64_emulate(RDContext* ctx, const RDInstruction* instr,
             else
                 rd_auto_xref_add(ctx, instr->address, op->addr, RD_DR_ADDRESS);
         }
-        else if(op->kind == RD_OP_MEM && rd_is_address(ctx, op->mem))
+        else if(op->kind == RD_OP_MEM && rd_is_address(ctx, op->mem)) {
             rd_auto_xref_add(ctx, instr->address, op->mem, RD_DR_READ);
+        }
     }
 
     // catch pc-relative loading

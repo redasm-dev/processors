@@ -125,18 +125,15 @@ static bool _z80_get_reg_mask(const char* name, RDRegMask* m) {
         case Z80_REG_B:
         case Z80_REG_D:
         case Z80_REG_IXH:
-        case Z80_REG_IYH:
-            m->mask = 0xFF00;
-            m->shift = 8;
-            break;
+        case Z80_REG_IYH: *m = rd_make_regmask(8, 8); break;
 
         case Z80_REG_L:
         case Z80_REG_C:
         case Z80_REG_E:
         case Z80_REG_IXL:
-        case Z80_REG_IYL: m->mask = 0x00FF; break;
+        case Z80_REG_IYL: *m = rd_make_regmask(8, 0); break;
 
-        default: m->mask = RD_REGMASK_FULL; break;
+        default: *m = rd_make_regmask(16, 0); break;
     }
 
     return true;

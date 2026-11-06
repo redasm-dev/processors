@@ -148,10 +148,12 @@ static void _capstone_arm32_clear_written(RDContext* ctx,
     rd_foreach_operand(i, op, instr) {
         if(op->kind == RD_OP_REG &&
            (op->userdata2 || (i == 0 && instr->write_back &&
-                              _capstone_arm32_is_block_transfer(instr->id))))
+                              _capstone_arm32_is_block_transfer(instr->id)))) {
             rd_del_regval_id(ctx, op->reg);
-        else if(op->kind == RD_OP_DISPL && instr->write_back)
+        }
+        else if(op->kind == RD_OP_DISPL && instr->write_back) {
             rd_del_regval_id(ctx, op->displ.base);
+        }
         else if(op->kind == ARM_OP_REGMASK &&
                 _capstone_arm32_is_load_multiple(instr->id)) {
             for(int r = 0; r < 16; r++)
@@ -187,8 +189,9 @@ static void _capstone_arm32_track(RDContext* ctx, const RDInstruction* instr,
                 _capstone_arm32_set_regval(ctx, dst->reg,
                                            (u32)(src->addr | src->userdata1));
             }
-            else // ordinary add/sub: result unknown
+            else { // ordinary add/sub: result unknown
                 _capstone_arm32_clear_written(ctx, instr);
+            }
 
             break;
         }
@@ -217,11 +220,13 @@ static void _capstone_arm32_track(RDContext* ctx, const RDInstruction* instr,
                                               &val, capstone)) {
                     _capstone_arm32_set_regval(ctx, dst->reg, val);
                 }
-                else
+                else {
                     rd_del_regval_id(ctx, dst->reg);
+                }
             }
-            else
+            else {
                 _capstone_arm32_clear_written(ctx, instr);
+            }
 
             break;
         }
@@ -242,8 +247,9 @@ static void _capstone_arm32_track(RDContext* ctx, const RDInstruction* instr,
                 _capstone_arm32_set_regval(ctx, instr->operands[0].reg, result);
                 rd_auto_xref_add(ctx, instr->address, result, RD_DR_ADDRESS);
             }
-            else
+            else {
                 rd_del_regval_id(ctx, instr->operands[0].reg);
+            }
 
             break;
         }
@@ -277,13 +283,16 @@ static void _capstone_arm32_track(RDContext* ctx, const RDInstruction* instr,
             bool ok = known && _capstone_arm32_read_const32(ctx, addr, &val);
 
             if(dst->reg == ARM_REG_PC) {
-                // never track pc in the register map, just follow the target
+                // never track pc in the register map, just follow the
+                // target
                 if(ok) _capstone_arm32_branch_to(ctx, instr, val, false);
             }
-            else if(ok)
+            else if(ok) {
                 _capstone_arm32_set_regval(ctx, dst->reg, val);
-            else
+            }
+            else {
                 rd_del_regval_id(ctx, dst->reg);
+            }
 
             if(src->kind == RD_OP_DISPL && instr->write_back)
                 rd_del_regval_id(ctx, src->displ.base);
@@ -295,7 +304,8 @@ static void _capstone_arm32_track(RDContext* ctx, const RDInstruction* instr,
         case ARM_INS_BLX: {
             const RDOperand* op = &instr->operands[0];
 
-            // blx imm is an address operand, see _capstone_arm32_xref_operands
+            // blx imm is an address operand, see
+            // _capstone_arm32_xref_operands
             if(op->kind != RD_OP_REG) break;
             if(op->reg == ARM_REG_LR || op->reg == ARM_REG_PC) break;
 
@@ -329,8 +339,9 @@ static void _capstone_arm32_xref_operands(RDContext* ctx,
                                      ? RD_CR_CALL
                                      : RD_CR_JUMP);
             }
-            else // adr
+            else { // adr
                 rd_auto_xref_add(ctx, instr->address, op->addr, RD_DR_ADDRESS);
+            }
         }
         else if(op->kind == RD_OP_MEM && rd_is_address(ctx, op->mem)) {
             rd_auto_xref_add(ctx, instr->address, op->mem, RD_DR_READ);
@@ -442,8 +453,9 @@ bool capstone_plugin_arm32_render_operand(RDRenderer* r,
                 rd_renderer_num(r, op->displ.offset, 10, 0, RD_NUM_SIGNED);
             }
         }
-        else if(instr->write_back)
+        else if(instr->write_back) {
             rd_renderer_norm(r, "!");
+        }
 
         return true;
     }
@@ -635,9 +647,10 @@ bool capstone_arm32_decode_flow(const cs_insn* cs_insn, RDInstruction* instr) {
                 const cs_arm_op* m = &d->operands[1];
 
                 if((cs_insn->is_alias && d->post_index) ||
-                   (m->type == ARM_OP_MEM && m->mem.base == ARM_REG_SP))
+                   (m->type == ARM_OP_MEM && m->mem.base == ARM_REG_SP)) {
                     _capstone_arm32_set_return(
                         d, instr); // pop {pc}; ldr pc, [sp], #4
+                }
                 else if(d->post_index) {
                     // ldr pc, [rN], #imm: walks a pointer, not a plain jump
                     break;
@@ -663,8 +676,8 @@ bool capstone_arm32_decode_flow(const cs_insn* cs_insn, RDInstruction* instr) {
             const cs_arm_op* s = &d->operands[1];
 
             // mov pc, lr; subs pc, lr, #n; ...
-            // anything else (mov pc, rN; add pc, pc, rX) flows: the target is
-            // computed, so we don't pretend to know it
+            // anything else (mov pc, rN; add pc, pc, rX) flows: the target
+            // is computed, so we don't pretend to know it
             if(s->type == ARM_OP_REG && s->reg == ARM_REG_LR)
                 _capstone_arm32_set_return(d, instr);
 

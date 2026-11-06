@@ -60,15 +60,12 @@ static bool _x86_get_reg_mask(RDReg reg_id, RDRegMask* m) {
         case ZYDIS_REGISTER_AL:
         case ZYDIS_REGISTER_BL:
         case ZYDIS_REGISTER_CL:
-        case ZYDIS_REGISTER_DL: m->mask = 0xFF; break;
+        case ZYDIS_REGISTER_DL: *m = rd_make_regmask(8, 0); break;
 
         case ZYDIS_REGISTER_AH:
         case ZYDIS_REGISTER_BH:
         case ZYDIS_REGISTER_CH:
-        case ZYDIS_REGISTER_DH:
-            m->mask = 0xFF00;
-            m->shift = 8;
-            break;
+        case ZYDIS_REGISTER_DH: *m = rd_make_regmask(8, 8); break;
 
         case ZYDIS_REGISTER_AX:
         case ZYDIS_REGISTER_BX:
@@ -77,7 +74,7 @@ static bool _x86_get_reg_mask(RDReg reg_id, RDRegMask* m) {
         case ZYDIS_REGISTER_SI:
         case ZYDIS_REGISTER_DI:
         case ZYDIS_REGISTER_BP:
-        case ZYDIS_REGISTER_SP: m->mask = 0xFFFF; break;
+        case ZYDIS_REGISTER_SP: *m = rd_make_regmask(16, 0); break;
 
         case ZYDIS_REGISTER_EAX:
         case ZYDIS_REGISTER_EBX:
@@ -86,9 +83,9 @@ static bool _x86_get_reg_mask(RDReg reg_id, RDRegMask* m) {
         case ZYDIS_REGISTER_ESI:
         case ZYDIS_REGISTER_EDI:
         case ZYDIS_REGISTER_EBP:
-        case ZYDIS_REGISTER_ESP: m->mask = 0xFFFFFFFF; break;
+        case ZYDIS_REGISTER_ESP: *m = rd_make_regmask(32, 0); break;
 
-        default: m->mask = RD_REGMASK_FULL; break;
+        default: *m = rd_make_regmask(64, 0); break;
     }
 
     return true;
