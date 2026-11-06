@@ -6,6 +6,7 @@
 static const CapstoneInitData MOS6502_INIT = {
     .arch = CS_ARCH_MOS65XX,
     .mode = CS_MODE_MOS65XX_6502,
+    .reg_bits = 8,
 };
 
 static bool mos6502_is_read(u32 id) {
@@ -124,7 +125,7 @@ static void mos6502_decode(RDContext* ctx, RDInstruction* instr,
                         rd_instr_set_op_displ(instr, i, RD_REGID_INVALID,
                                               MOS65XX_REG_Y, 1, (i64)addr);
                         op->size =
-                            d->am == MOS65XX_AM_ZP_X ? sizeof(u8) : sizeof(u16);
+                            d->am == MOS65XX_AM_ZP_Y ? sizeof(u8) : sizeof(u16);
                         break;
                     }
 
