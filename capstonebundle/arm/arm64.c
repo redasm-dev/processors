@@ -4,11 +4,13 @@
 static const CapstoneInitData ARM64_LE_INIT = {
     .arch = CS_ARCH_AARCH64,
     .mode = CS_MODE_ARM | CS_MODE_LITTLE_ENDIAN,
+    .reg_bits = 64,
 };
 
 static const CapstoneInitData ARM64_BE_INIT = {
     .arch = CS_ARCH_AARCH64,
     .mode = CS_MODE_ARM | CS_MODE_BIG_ENDIAN,
+    .reg_bits = 64,
 };
 
 static void arm64_decode(RDContext* ctx, RDInstruction* instr, RDProcessor* p) {

@@ -12,11 +12,13 @@ typedef struct ARM32Capstone {
 static const CapstoneInitData ARM32_LE_INIT = {
     .arch = CS_ARCH_ARM,
     .mode = CS_MODE_ARM | CS_MODE_LITTLE_ENDIAN,
+    .reg_bits = 32,
 };
 
 static const CapstoneInitData ARM32_BE_INIT = {
     .arch = CS_ARCH_ARM,
     .mode = CS_MODE_ARM | CS_MODE_BIG_ENDIAN,
+    .reg_bits = 32,
 };
 
 static RDAddress _arm32_get_pc(RDAddress address) {

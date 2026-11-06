@@ -4,11 +4,13 @@
 const CapstoneInitData THUMB_LE_INIT = {
     .arch = CS_ARCH_ARM,
     .mode = CS_MODE_THUMB | CS_MODE_LITTLE_ENDIAN,
+    .reg_bits = 32,
 };
 
 const CapstoneInitData THUMB_BE_INIT = {
     .arch = CS_ARCH_ARM,
     .mode = CS_MODE_THUMB | CS_MODE_BIG_ENDIAN,
+    .reg_bits = 32,
 };
 
 static RDAddress _thumb_get_pc(RDAddress address) {

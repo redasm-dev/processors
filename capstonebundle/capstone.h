@@ -6,6 +6,7 @@
 typedef struct CapstoneInitData {
     cs_arch arch;
     cs_mode mode;
+    u8 reg_bits;
 } CapstoneInitData;
 
 typedef struct Capstone {
