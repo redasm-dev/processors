@@ -1,6 +1,7 @@
 #include "arm/arm32/arm32.h"
 #include "arm/arm32/thumb.h"
 #include "arm/arm64.h"
+#include "mips/mips.h"
 #include "mos65xx/mos6502.h"
 // #include "xtensa/xtensa.h"
 #include <capstone/capstone.h>
@@ -11,8 +12,9 @@
         if(cs_support(arch)) {                                                 \
             __VA_ARGS__                                                        \
         }                                                                      \
-        else                                                                   \
+        else {                                                                 \
             RD_LOG_WARN("missing " #arch " support, skipping registration");   \
+        }                                                                      \
     } while(0)
 
 static void capstone_module_load(void) {
@@ -27,6 +29,13 @@ static void capstone_module_load(void) {
     capstonebundle_register(CS_ARCH_AARCH64, {
         rd_register_processor(&ARM64_LE);
         rd_register_processor(&ARM64_BE);
+    });
+
+    capstonebundle_register(CS_ARCH_MIPS, {
+        rd_register_processor(&MIPS32_LE);
+        rd_register_processor(&MIPS32_BE);
+        rd_register_processor(&MIPS64_LE);
+        rd_register_processor(&MIPS64_BE);
     });
 
     capstonebundle_register(CS_ARCH_MOS65XX,

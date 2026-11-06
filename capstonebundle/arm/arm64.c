@@ -15,7 +15,7 @@ static const CapstoneInitData ARM64_BE_INIT = {
 
 static void arm64_decode(RDContext* ctx, RDInstruction* instr, RDProcessor* p) {
     char data[sizeof(u32)];
-    if(!rd_read(ctx, instr->address, &data, rd_count_of(data))) return;
+    if(!rd_read_exact(ctx, instr->address, &data, rd_count_of(data))) return;
 
     const cs_insn* cs_insn =
         capstone_plugin_decode(instr, data, rd_count_of(data), p);

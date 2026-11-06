@@ -13,7 +13,6 @@ else()
 endif()
 
 add_subdirectory(capstonebundle)
-add_subdirectory(mips)
 add_subdirectory(x86)
 add_subdirectory(z80)
 

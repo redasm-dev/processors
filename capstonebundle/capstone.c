@@ -60,6 +60,12 @@ const cs_insn* capstone_plugin_decode(RDInstruction* instr, const char* code,
     size_t len = (size_t)n;
     uint64_t addr = (uint64_t)instr->address;
 
+    // cs_disasm_iter reuses the struct and only sets these for aliases:
+    // without a reset, a non-alias inherits the previous alias' values
+    self->insn->is_alias = false;
+    self->insn->alias_id = 0;
+    self->insn->usesAliasDetails = false;
+
     if(!cs_disasm_iter(self->handle, ptr, &len, &addr, self->insn)) return NULL;
 
     instr->id = self->insn->id;
