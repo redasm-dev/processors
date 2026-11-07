@@ -26,6 +26,18 @@ static const CapstoneInitData MIPS64_BE_INIT = {
     .reg_bits = 64,
 };
 
+static const mips_reg MIPS_CALLER_SAVED[] = {
+    MIPS_REG_AT, MIPS_REG_V0, MIPS_REG_V1, MIPS_REG_A0, MIPS_REG_A1,
+    MIPS_REG_A2, MIPS_REG_A3, MIPS_REG_T0, MIPS_REG_T1, MIPS_REG_T2,
+    MIPS_REG_T3, MIPS_REG_T4, MIPS_REG_T5, MIPS_REG_T6, MIPS_REG_T7,
+    MIPS_REG_T8, MIPS_REG_T9, MIPS_REG_RA,
+};
+
+static void _mips_emu_call_clobber(RDContext* ctx) {
+    for(usize i = 0; i < rd_count_of(MIPS_CALLER_SAVED); i++)
+        rd_del_regval_id(ctx, MIPS_CALLER_SAVED[i]);
+}
+
 static bool _mips_has_delay_slot(const cs_insn* insn) {
     if(insn->is_alias) {
         switch(insn->alias_id) {
@@ -351,6 +363,7 @@ static void mips_emulate(RDContext* ctx, const RDInstruction* instr,
         }
     }
 
+    if(rd_instr_is_call(instr)) _mips_emu_call_clobber(ctx);
     if(rd_instr_can_flow(instr)) rd_flow(ctx, instr->address + instr->length);
 }
 
